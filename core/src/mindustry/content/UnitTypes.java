@@ -122,8 +122,6 @@ public class UnitTypes implements ContentList{
                     knockback = 0.8f;
                     lifetime = 110f;
                     width = height = 14f;
-                    collides = true;
-                    collidesTiles = true;
                     splashDamageRadius = 24f;
                     splashDamage = 38f;
                     backColor = Pal.bulletYellowBack;
@@ -381,7 +379,7 @@ public class UnitTypes implements ContentList{
             drag = 0.1f;
             speed = 0.5f;
             hitsize = 9f;
-            health = 140;
+            health = 10000;
 
             legCount = 6;
             legMoveSpace = 1f;
@@ -404,7 +402,7 @@ public class UnitTypes implements ContentList{
                 x = 4f;
                 rotate = true;
                 shake = 1f;
-                bullet = new MissileBulletType(2.7f, 12, "missile"){{
+                bullet = new MissileBulletType(2.7f, 20, "missile"){{
                     width = 8f;
                     height = 8f;
                     shrinkY = 0f;
@@ -421,6 +419,8 @@ public class UnitTypes implements ContentList{
                     despawnEffect = Fx.blastExplosion;
                     weaveScale = 8f;
                     weaveMag = 2f;
+                    lightning = 5;
+                    lightningLength = 15;
                 }};
             }});
         }};
@@ -538,13 +538,50 @@ public class UnitTypes implements ContentList{
             engineOffset = 21;
             engineSize = 5.3f;
             hitsize = 58f;
-
-            weapons.add(new Weapon(){{
-                y = 1.5f;
-                reload = 28f;
-                ejectEffect = Fx.shellEjectSmall;
-                bullet = Bullets.standardCopper;
-                shootSound = Sounds.shoot;
+            weapons.add(new Weapon("frontal-cannon"){{
+                x = 10f;
+                y = 20f;
+                reload = 20f;
+                recoil = 0f;
+                alternate = false;
+                bullet = Bullets.standardThoriumBig;
+                shootSound = Sounds.shootBig;
+            }});
+            weapons.add(new Weapon("mid-front-cannon"){{
+                x = 15f;
+                y = 10f;
+                reload = 25f;
+                recoil = 0f;
+                alternate = false;
+                bullet = Bullets.standardThoriumBig;
+                shootSound = Sounds.shootBig;
+            }});
+            weapons.add(new Weapon("middle-cannon"){{
+                x = 20f;
+                y = 0f;
+                reload = 30f;
+                recoil = 0f;
+                alternate = false;
+                bullet = Bullets.standardThoriumBig;
+                shootSound = Sounds.shootBig;
+            }});
+            weapons.add(new Weapon("mid-back-cannon"){{
+                x = 15f;
+                y = -10f;
+                reload = 35f;
+                recoil = 0f;
+                alternate = false;
+                bullet = Bullets.standardThoriumBig;
+                shootSound = Sounds.shootBig;
+            }});
+            weapons.add(new Weapon("back-cannon"){{
+                x = 10f;
+                y = -20f;
+                reload = 40f;
+                recoil = 0f;
+                alternate = false;
+                bullet = Bullets.standardThoriumBig;
+                shootSound = Sounds.shootBig;
             }});
         }};
 
