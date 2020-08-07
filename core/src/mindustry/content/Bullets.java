@@ -289,8 +289,8 @@ public class Bullets implements ContentList{
         }};
 
         railgunDense = new BasicBulletType(15f, 200, "bullet"){{
-            width = 20f;
-            height = 100f;
+            width = 10f;
+            height = 50f;
             lifetime = 25f;
             shootEffect = Fx.shootBig;
             smokeEffect = Fx.shootBigSmoke;
@@ -299,8 +299,8 @@ public class Bullets implements ContentList{
         }};
 
         railgunTitanium = new BasicBulletType(15f, 250, "bullet"){{
-            width = 20f;
-            height = 100f;
+            width = 10f;
+            height = 50f;
             lifetime = 25f;
             shootEffect = Fx.shootBig;
             smokeEffect = Fx.shootBigSmoke;
@@ -309,8 +309,8 @@ public class Bullets implements ContentList{
         }};
 
         railgunThorium = new BasicBulletType(15f, 300, "bullet"){{
-            width = 20f;
-            height = 100f;
+            width = 10f;
+            height = 50f;
             lifetime = 25f;
             shootEffect = Fx.shootBig;
             smokeEffect = Fx.shootBigSmoke;
@@ -319,8 +319,8 @@ public class Bullets implements ContentList{
         }};
 
         railgunSurge = new BasicBulletType(15f, 250, "bullet"){{
-            width = 20f;
-            height = 100f;
+            width = 10f;
+            height = 50f;
             lifetime = 25f;
             shootEffect = Fx.shootBig;
             smokeEffect = Fx.shootBigSmoke;
