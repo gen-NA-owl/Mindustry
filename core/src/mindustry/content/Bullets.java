@@ -288,7 +288,7 @@ public class Bullets implements ContentList{
             lightningLength = 14;
         }};
 
-        railgunDense = new BasicBulletType(15f, 200, "bullet"){{
+        railgunDense = new BasicBulletType(15f, 300, "bullet"){{
             width = 10f;
             height = 50f;
             lifetime = 25f;
@@ -298,7 +298,7 @@ public class Bullets implements ContentList{
             lifelost = 1f;
         }};
 
-        railgunTitanium = new BasicBulletType(15f, 250, "bullet"){{
+        railgunTitanium = new BasicBulletType(15f, 400, "bullet"){{
             width = 10f;
             height = 50f;
             lifetime = 25f;
@@ -308,7 +308,7 @@ public class Bullets implements ContentList{
             lifelost = 1f;
         }};
 
-        railgunThorium = new BasicBulletType(15f, 300, "bullet"){{
+        railgunThorium = new BasicBulletType(15f, 500, "bullet"){{
             width = 10f;
             height = 50f;
             lifetime = 25f;
@@ -318,7 +318,7 @@ public class Bullets implements ContentList{
             lifelost = 1f;
         }};
 
-        railgunSurge = new BasicBulletType(15f, 250, "bullet"){{
+        railgunSurge = new BasicBulletType(15f, 300, "bullet"){{
             width = 10f;
             height = 50f;
             lifetime = 25f;
