@@ -318,7 +318,7 @@ public class Bullets implements ContentList{
             lifelost = 1f;
         }};
 
-        railgunSurge = new BasicBulletType(15f, 300, "bullet"){{
+        railgunSurge = new BasicBulletType(15f, 250, "bullet"){{
             width = 10f;
             height = 50f;
             lifetime = 25f;
