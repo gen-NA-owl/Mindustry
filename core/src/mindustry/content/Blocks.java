@@ -769,6 +769,7 @@ public class Blocks implements ContentList{
             requirements(Category.defense, ItemStack.mult(phaseWall.requirements, 4));
             health = 150 * 4 * wallHealthMultiplier;
             size = 2;
+            maxChanceDeflect = 40f;
             flashWhite = deflect = true;
         }};
 
