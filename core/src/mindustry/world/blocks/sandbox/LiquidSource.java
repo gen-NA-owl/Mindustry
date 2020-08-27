@@ -59,7 +59,9 @@ public class LiquidSource extends Block{
         public void draw(){
             super.draw();
 
-            if(source != null){
+            if(source == null) {
+                Draw.rect("cross", x, y);
+            }else{
                 Draw.color(source.color);
                 Draw.rect("center", x, y);
                 Draw.color();
