@@ -589,7 +589,7 @@ public class Blocks implements ContentList{
             rotate = false;
             solid = true;
             outputsLiquid = true;
-            drawer = new DrawMixer();
+            drawer = new DrawLiquidMixer();
 
             consumes.power(1f);
             consumes.item(Items.titanium);
@@ -598,6 +598,8 @@ public class Blocks implements ContentList{
 
         blastMixer = new GenericCrafter("blast-mixer"){{
             requirements(Category.crafting, with(Items.lead, 30, Items.titanium, 20));
+            drawer = new DrawMixer();
+
             hasItems = true;
             hasPower = true;
             outputItem = new ItemStack(Items.blastCompound, 1);
@@ -609,6 +611,8 @@ public class Blocks implements ContentList{
 
         pyratiteMixer = new GenericSmelter("pyratite-mixer"){{
             requirements(Category.crafting, with(Items.copper, 50, Items.lead, 25));
+            drawer = new DrawMixer();
+            
             flameColor = Color.clear;
             hasItems = true;
             hasPower = true;

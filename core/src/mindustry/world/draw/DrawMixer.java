@@ -6,34 +6,25 @@ import mindustry.world.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.blocks.production.GenericCrafter.*;
 
-public class DrawMixer extends DrawBlock{
-    public TextureRegion liquid, top, bottom;
+public class DrawMixer extends DrawRotator{
+    public TextureRegion top;
 
     @Override
     public void draw(GenericCrafterBuild entity){
-        float rotation = entity.block.rotate ? entity.rotdeg() : 0;
+        super.draw(entity);
 
-        Draw.rect(bottom, entity.x, entity.y, rotation);
-
-        if(entity.liquids.total() > 0.001f){
-            Draw.color(((GenericCrafter)entity.block).outputLiquid.liquid.color);
-            Draw.alpha(entity.liquids.get(((GenericCrafter)entity.block).outputLiquid.liquid) / entity.block.liquidCapacity);
-            Draw.rect(liquid, entity.x, entity.y, rotation);
-            Draw.color();
-        }
-
-        Draw.rect(top, entity.x, entity.y, rotation);
+        Draw.rect(top, entity.x, entity.y);
     }
 
     @Override
     public void load(Block block){
-        liquid = Core.atlas.find(block.name + "-liquid");
+        super.load(block);
+        
         top = Core.atlas.find(block.name + "-top");
-        bottom = Core.atlas.find(block.name + "-bottom");
     }
 
     @Override
     public TextureRegion[] icons(Block block){
-        return new TextureRegion[]{bottom, top};
+        return new TextureRegion[]{block.region, rotator, top};
     }
 }
