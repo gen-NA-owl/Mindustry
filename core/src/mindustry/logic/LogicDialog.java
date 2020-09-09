@@ -20,7 +20,6 @@ public class LogicDialog extends BaseDialog{
         clearChildren();
 
         canvas = new LCanvas();
-        shouldPause = true;
         addCloseButton();
 
         buttons.getCells().first().width(170f);
