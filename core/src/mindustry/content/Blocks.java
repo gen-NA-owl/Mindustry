@@ -223,12 +223,12 @@ public class Blocks implements ContentList{
         }};
 
         ignarock = new Floor("ignarock"){{
-            attributes.set(Attribute.water, -0.1f);
+            attributes.set(Attribute.water, -0.25f);
         }};
 
         hotrock = new Floor("hotrock"){{
             attributes.set(Attribute.heat, 0.5f);
-            attributes.set(Attribute.water, -0.2f);
+            attributes.set(Attribute.water, -0.5f);
             blendGroup = ignarock;
             emitLight = true;
             lightColor = Color.orange.cpy().a(0.15f);
@@ -237,7 +237,7 @@ public class Blocks implements ContentList{
 
         magmarock = new Floor("magmarock"){{
             attributes.set(Attribute.heat, 0.75f);
-            attributes.set(Attribute.water, -0.5f);
+            attributes.set(Attribute.water, -0.75f);
             blendGroup = ignarock;
             emitLight = true;
             lightColor = Color.orange.cpy().a(0.3f);
@@ -1822,7 +1822,7 @@ public class Blocks implements ContentList{
             requirements(Category.turret, with(Items.copper, 250, Items.lead, 350, Items.graphite, 300, Items.surgealloy, 325, Items.silicon, 325));
 
             shootType = new ContinuousLaserBulletType(70){{
-                length = 220f;
+                length = 200f;
                 hitEffect = Fx.hitMeltdown;
                 drawSize = 420f;
 
