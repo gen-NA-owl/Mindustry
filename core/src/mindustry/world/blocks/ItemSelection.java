@@ -15,9 +15,15 @@ public class ItemSelection{
     private static float scrollPos = 0f;
 
     public static <T extends UnlockableContent> void buildTable(Table table, Seq<T> items, Prov<T> holder, Cons<T> consumer){
+        Seq<T> seq = new Seq<T>();
+        seq.add(holder.get());
+        buildTable(table, items, seq, consumer);
+    }
+    public static <T extends UnlockableContent> void buildTable(Table table, Seq<T> items, Seq<T> holder, Cons<T> consumer){
 
         ButtonGroup<ImageButton> group = new ButtonGroup<>();
         group.setMinCheckCount(0);
+        group.setMaxCheckCount(holder.size);
         Table cont = new Table();
         cont.defaults().size(40);
 
@@ -29,7 +35,7 @@ public class ItemSelection{
             ImageButton button = cont.button(Tex.whiteui, Styles.clearToggleTransi, 24, () -> control.input.frag.config.hideConfig()).group(group).get();
             button.changed(() -> consumer.get(button.isChecked() ? item : null));
             button.getStyle().imageUp = new TextureRegionDrawable(item.icon(Cicon.small));
-            button.update(() -> button.setChecked(holder.get() == item));
+            button.update(() -> button.setChecked(holder.contains(item)));
 
             if(i++ % 4 == 3){
                 cont.row();

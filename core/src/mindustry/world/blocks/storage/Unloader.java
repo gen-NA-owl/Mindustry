@@ -5,6 +5,7 @@ import arc.graphics.g2d.*;
 import arc.scene.ui.layout.*;
 import arc.util.*;
 import arc.util.io.*;
+import arc.struct.*;
 import mindustry.entities.units.*;
 import mindustry.gen.*;
 import mindustry.type.*;
@@ -28,8 +29,8 @@ public class Unloader extends Block{
         itemCapacity = 0;
         noUpdateDisabled = true;
 
-        config(Item.class, (UnloaderBuild tile, Item item) -> tile.sortItem = item);
-        configClear((UnloaderBuild tile) -> tile.sortItem = null);
+        config(Item.class, (UnloaderBuild tile, Item item) -> tile.sortItems.add(item));
+        configClear((UnloaderBuild tile) -> tile.sortItems.clear());
     }
 
     @Override
@@ -44,24 +45,25 @@ public class Unloader extends Block{
     }
 
     public class UnloaderBuild extends Building{
-        public Item sortItem = null;
+        public Seq<Item> sortItems = new Seq<Item>();
         public Building dumpingTo;
+        public int takeIndex = 0;
 
         @Override
         public void updateTile(){
             if(timer(timerUnload, speed / timeScale())){
                 for(Building other : proximity){
                     if(other.interactable(team) && other.block.unloadable && other.block.hasItems
-                        && ((sortItem == null && other.items.total() > 0) || (sortItem != null && other.items.has(sortItem)))){
+                        && ((sortItems.size == 0 && other.items.total() > 0) || (sortItems.size != 0 && other.items.has(sortItems.get(takeIndex))))){
                         //make sure the item can't be dumped back into this block
                         dumpingTo = other;
 
                         //get item to be taken
-                        Item item = sortItem == null ? other.items.beginTake() : sortItem;
+                        Item item = sortItems.size == 0 ? other.items.beginTake() : sortItems.get(takeIndex);
 
                         //remove item if it's dumped correctly
                         if(put(item)){
-                            if(sortItem == null){
+                            if(sortItems.size == 0){
                                 other.items.endTake(item);
                             }else{
                                 other.items.remove(item, 1);
@@ -69,6 +71,8 @@ public class Unloader extends Block{
                         }
                     }
                 }
+                //update takeIndex
+                takeIndex = takeIndex >= sortItems.size - 1 ? 0 : takeIndex + 1;
             }
         }
 
@@ -76,14 +80,14 @@ public class Unloader extends Block{
         public void draw(){
             super.draw();
 
-            Draw.color(sortItem == null ? Color.clear : sortItem.color);
+            Draw.color(sortItems.size == 0 ? Color.clear : sortItems.get(0).color);
             Draw.rect("unloader-center", x, y);
             Draw.color();
         }
 
         @Override
         public void buildConfiguration(Table table){
-            ItemSelection.buildTable(table, content.items(), () -> sortItem, this::configure);
+            ItemSelection.buildTable(table, content.items(), sortItems, this::configure);
         }
 
         @Override
@@ -104,7 +108,7 @@ public class Unloader extends Block{
 
         @Override
         public Item config(){
-            return sortItem;
+            return sortItems.size == 0 ? null : sortItems.get(0);
         }
 
         @Override
@@ -115,14 +119,18 @@ public class Unloader extends Block{
         @Override
         public void write(Writes write){
             super.write(write);
-            write.s(sortItem == null ? -1 : sortItem.id);
+            write.s(sortItems.size == 0 ? -1 : sortItems.get(0).id);
         }
 
         @Override
         public void read(Reads read, byte revision){
             super.read(read, revision);
             int id = revision == 1 ? read.s() : read.b();
-            sortItem = id == -1 ? null : content.items().get(id);
+            if(sortItems.contains(content.items().get(id))) {
+                sortItems.remove(content.items().get(id));
+            } else {
+                sortItems.add(content.items().get(id));
+            }
         }
     }
 }
