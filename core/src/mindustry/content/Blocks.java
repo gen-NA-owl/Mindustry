@@ -288,18 +288,21 @@ public class Blocks implements ContentList{
 
         snow = new Floor("snow"){{
             attributes.set(Attribute.water, 0.2f);
+            attributes.set(Attribute.heat, -0.2f);
         }};
 
         ice = new Floor("ice"){{
             dragMultiplier = 0.35f;
             speedMultiplier = 0.9f;
             attributes.set(Attribute.water, 0.4f);
+            attributes.set(Attribute.heat, -0.4f);
         }};
 
         iceSnow = new Floor("ice-snow"){{
             dragMultiplier = 0.6f;
             variants = 3;
             attributes.set(Attribute.water, 0.3f);
+            attributes.set(Attribute.heat, -0.3f);
         }};
 
         stoneWall = new StaticWall("stone-wall"){{

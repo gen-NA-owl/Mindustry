@@ -122,7 +122,7 @@ public class ItemLiquidGenerator extends PowerGenerator{
                 float used = Math.min(liquids.get(liquid) * calculationDelta, maximumPossible);
 
                 liquids.remove(liquid, used * power.graph.getUsageFraction());
-                productionEfficiency = baseLiquidEfficiency * used / maximumPossible;
+                updateProductionEfficiency(baseLiquidEfficiency * used / maximumPossible);
 
                 if(used > 0.001f && Mathf.chance(0.05 * delta())){
                     generateEffect.at(x + Mathf.range(3f), y + Mathf.range(3f));
@@ -132,7 +132,7 @@ public class ItemLiquidGenerator extends PowerGenerator{
                 if(generateTime <= 0f && items.total() > 0){
                     generateEffect.at(x + Mathf.range(3f), y + Mathf.range(3f));
                     Item item = items.take();
-                    productionEfficiency = getItemEfficiency(item);
+                    updateProductionEfficiency(getItemEfficiency(item));
                     explosiveness = item.explosiveness;
                     generateTime = 1f;
                 }
@@ -151,6 +151,11 @@ public class ItemLiquidGenerator extends PowerGenerator{
                     productionEfficiency = 0.0f;
                 }
             }
+        }
+
+        /* An overidable method that allows one to incorperate other values into efficiency */
+        public void updateProductionEfficiency(float baseEfficiency) {
+            productionEfficiency = baseEfficiency;
         }
 
         @Override
