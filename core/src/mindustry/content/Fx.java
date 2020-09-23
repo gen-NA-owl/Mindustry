@@ -322,6 +322,37 @@ public class Fx{
         Fill.circle(e.x, e.y, e.fin() * 10);
     }),
 
+    surgeLaserCharge = new Effect(150f, 100f, e -> {
+        color(Pal.surge);
+        stroke(e.fin() * 5f);
+        Lines.circle(e.x, e.y, 4f + e.fout() * 250f);
+
+        Fill.circle(e.x, e.y, e.fin() * 50);
+
+        randLenVectors(e.id, 50, 50f * e.fout(), (x, y) -> {
+            Fill.circle(e.x + x, e.y + y, e.fin() * 5f);
+        });
+
+        randLenVectors(e.id, 75, 10f + 200f * e.fout(), e.rotation, 150f, (x, y) -> {
+            lineAngle(e.x + x, e.y + y, Mathf.angle(x, y), e.fslope() * 3f + 1f);
+        });
+
+        color();
+
+        Fill.circle(e.x, e.y, e.fin() * 50);
+
+
+        color(new Color(255, 255, 255, e.fin() * 5));
+        stroke(e.fin() * 15f);
+        for(int i = 0;i < 10;i ++) {
+            lineAngle(e.x, e.y, (e.fin() * 100) +  i * (360/10), e.fin() * 2500);
+        }
+        for(int i = 0;i < 10;i ++) {
+            lineAngle(e.x, e.y, (e.fin() * -100) +  i * (360/10), e.fin() * 2500);
+        }
+        color();
+    }),
+
     greenLaserChargeSmall = new Effect(40f, 100f, e -> {
         color(Pal.heal);
         stroke(e.fin() * 2f);

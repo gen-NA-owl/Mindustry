@@ -37,10 +37,36 @@ public class Bullets implements ContentList{
     waterShot, cryoShot, slagShot, oilShot,
 
     //environment, misc.
-    damageLightning, damageLightningGround, fireball, basicFlame, pyraFlame, driverBolt, healBullet, healBulletBig, frag;
+    damageLightning, damageLightningGround, fireball, basicFlame, pyraFlame, driverBolt, healBullet, healBulletBig, frag, 
+
+    duoShot;
 
     @Override
     public void load(){
+
+        duoShot = new LaserBulletType(){{
+            length = 1000f;
+            damage = 10000f;
+            width = 250f;
+
+            lifetime = 65f;
+
+            lightningSpacing = 35f;
+            lightningLength = 5;
+            lightningDelay = 1.1f;
+            lightningLengthRand = 15;
+            lightningDamage = 50;
+            lightningAngleRand = 40f;
+            largeHit = true;
+            lightColor = lightningColor = Pal.surge;
+
+            shootEffect = Fx.surgeLaserCharge;
+
+            sideAngle = 15f;
+            sideWidth = 0f;
+            sideLength = 0f;
+            colors = new Color[]{Pal.surge.cpy().a(0.4f), Pal.surge, Color.white};
+        }};
 
         artilleryDense = new ArtilleryBulletType(3f, 12, "shell"){{
             hitEffect = Fx.flakExplosion;

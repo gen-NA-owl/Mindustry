@@ -57,6 +57,7 @@ public abstract class Turret extends Block{
     public float shootCone = 8f;
     public float shootShake = 0f;
     public float xRand = 0f;
+    public float firstShotDelay = 0;
     /** Currently used for artillery only. */
     public float minRange = 0f;
     public float burstSpacing = 0;
@@ -361,42 +362,45 @@ public abstract class Turret extends Block{
             recoil = recoilAmount;
             heat = 1f;
 
-            //when burst spacing is enabled, use the burst pattern
-            if(burstSpacing > 0.0001f){
-                for(int i = 0; i < shots; i++){
-                    Time.run(burstSpacing * i, () -> {
-                        if(!isValid() || !hasAmmo()) return;
+            effects();
+            useAmmo();
 
-                        recoil = recoilAmount;
-
-                        tr.trns(rotation, size * tilesize / 2f, Mathf.range(xRand));
-                        bullet(type, rotation + Mathf.range(inaccuracy));
-                        effects();
-                        useAmmo();
-                    });
-                }
-
-            }else{
-                //otherwise, use the normal shot pattern(s)
-
-                if(alternate){
-                    float i = (shotCounter % shots) - shots/2f + (((shots+1)%2) / 2f);
-
-                    tr.trns(rotation - 90, spread * i + Mathf.range(xRand), size * tilesize / 2f);
-                    bullet(type, rotation + Mathf.range(inaccuracy));
-                }else{
-                    tr.trns(rotation, size * tilesize / 2f, Mathf.range(xRand));
-
+            Time.run(firstShotDelay, () -> {
+                if(!isValid()) return;
+                //when burst spacing is enabled, use the burst pattern
+                if(burstSpacing > 0.0001f){
                     for(int i = 0; i < shots; i++){
-                        bullet(type, rotation + Mathf.range(inaccuracy + type.inaccuracy) + (i - (int)(shots / 2f)) * spread);
+                        Time.run(burstSpacing * i, () -> {
+                            if(!isValid() || !hasAmmo()) return;
+
+                            recoil = recoilAmount;
+
+                            tr.trns(rotation, size * tilesize / 2f, Mathf.range(xRand));
+                            bullet(type, rotation + Mathf.range(inaccuracy));
+                            effects();
+                            useAmmo();
+                        });
                     }
+
+                }else{
+                    //otherwise, use the normal shot pattern(s)
+
+                    if(alternate){
+                        float i = (shotCounter % shots) - shots/2f + (((shots+1)%2) / 2f);
+
+                        tr.trns(rotation - 90, spread * i + Mathf.range(xRand), size * tilesize / 2f);
+                        bullet(type, rotation + Mathf.range(inaccuracy));
+                    }else{
+                        tr.trns(rotation, size * tilesize / 2f, Mathf.range(xRand));
+
+                        for(int i = 0; i < shots; i++){
+                            bullet(type, rotation + Mathf.range(inaccuracy + type.inaccuracy) + (i - (int)(shots / 2f)) * spread);
+                       }
+                    }
+                    Effect.shake(shootShake * 10, shootShake, this);
+                    shotCounter++;                    
                 }
-
-                shotCounter++;
-
-                effects();
-                useAmmo();
-            }
+            });
         }
 
         protected void bullet(BulletType type, float angle){

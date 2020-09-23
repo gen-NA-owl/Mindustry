@@ -1361,15 +1361,12 @@ public class Blocks implements ContentList{
         duo = new ItemTurret("duo"){{
             requirements(Category.turret, with(Items.copper, 35), true);
             ammo(
-            Items.copper, Bullets.standardCopper,
-            Items.graphite, Bullets.standardDense,
-            Items.pyratite, Bullets.standardIncendiary,
-            Items.silicon, Bullets.standardHoming
+            Items.copper, Bullets.duoShot
             );
 
-            spread = 4f;
-            shots = 2;
-            alternate = true;
+            firstShotDelay = Bullets.duoShot.shootEffect.lifetime;
+            spread = 1f;
+            shots = 100;
             reloadTime = 20f;
             restitution = 0.03f;
             range = 100;
@@ -1378,6 +1375,8 @@ public class Blocks implements ContentList{
             health = 250;
             inaccuracy = 2f;
             rotateSpeed = 10f;
+            shootSound = Sounds.laser;
+            shootShake = 5f;
         }};
 
         scatter = new ItemTurret("scatter"){{
