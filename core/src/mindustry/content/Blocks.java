@@ -536,27 +536,6 @@ public class Blocks implements ContentList{
             consumes.items(new ItemStack(Items.coal, 4), new ItemStack(Items.sand, 6), new ItemStack(Items.pyratite, 1));
             consumes.power(4f);
         }};
-        
-        plastaniumPress = new AttributeSmelter("plastanium-press"){{
-            requirements(Category.crafting, with(Items.titanium, 100, Items.graphite, 45, Items.plastanium, 60, Items.lead, 60, Items.silicon, 80));
-            craftEffect = Fx.formsmoke;
-            health = 450;
-            updateEffect = Fx.plasticburn;
-            outputItem = new ItemStack(Items.plastanium, 4);
-            craftTime = 70f;
-            size = 3;
-            hasPower = hasLiquids = true;
-            drawer = new DrawGlow();
-            itemCapacity = 20;
-            boostScale = 0.20f;
-            liquidCapacity = 90f;
-            attribute = Attribute.oil;
-
-            consumes.items(new ItemStack(Items.titanium, 4), new ItemStack(Items.sand, 2));
-            consumes.liquid(Liquids.oil, 0.50f);
-            consumes.power(4.5f);
-            
-        }};
 
         kiln = new GenericSmelter("kiln"){{
             requirements(Category.crafting, with(Items.copper, 60, Items.graphite, 30, Items.lead, 30));
@@ -587,6 +566,29 @@ public class Blocks implements ContentList{
             consumes.liquid(Liquids.oil, 0.25f);
             consumes.power(3f);
             consumes.item(Items.titanium, 2);
+        }};
+
+        plastaniumPress = new AttributeSmelter("plastanium-press"){{
+            requirements(Category.crafting, with(Items.titanium, 100, Items.graphite, 45, Items.plastanium, 60, Items.lead, 60, Items.silicon, 80));
+            
+            flameColor = Color.clear;
+            craftEffect = Fx.formsmoke;
+            health = 450;
+            updateEffect = Fx.plasticburn;
+            outputItem = new ItemStack(Items.plastanium, 4);
+            craftTime = 70f;
+            size = 3;
+            hasPower = hasLiquids = true;
+            drawer = new DrawGlow();
+            itemCapacity = 20;
+            boostScale = 0.20f;
+            liquidCapacity = 90f;
+            attribute = Attribute.oil;
+
+            consumes.items(new ItemStack(Items.titanium, 4), new ItemStack(Items.sand, 2));
+            consumes.liquid(Liquids.oil, 0.50f);
+            consumes.power(4.5f);
+            
         }};
 
         phaseWeaver = new GenericCrafter("phase-weaver"){{
