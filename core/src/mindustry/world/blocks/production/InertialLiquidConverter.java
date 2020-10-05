@@ -33,6 +33,11 @@ public class InertialLiquidConverter extends LiquidConverter{
         () -> entity.productionEfficiency));
     }
 
+    @Override
+    public TextureRegion[] icons(){
+        return new TextureRegion[]{bottomRegion, rotatorRegion, topRegion};
+    }
+
     public class InertialLiquidConverterBuild extends LiquidConverterBuild{
         public float spinRotation = 0.0f;
         public float warmup = 0.0f;
