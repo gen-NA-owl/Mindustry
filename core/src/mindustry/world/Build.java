@@ -132,7 +132,7 @@ public class Build{
 
                 if(
                 check == null || //nothing there
-                (check.floor().isDeep() && !type.floating && !type.requiresWater && !type.placeableLiquid && !contactsBuoys(check.x, check.y, type)) || //deep water
+                (check.floor().isDeep() && !type.floating && !type.requiresWater && !type.placeableLiquid && !contactsBuoys(tile.x, tile.y, type)) ||  //deep water
                 (type == check.block() && check.build != null && rotation == check.build.rotation && type.rotate) || //same block, same rotation
                 !check.interactable(team) || //cannot interact
                 !check.floor().placeableOn || //solid wall
@@ -188,7 +188,7 @@ public class Build{
         if(block.isMultiblock()){
             for(Point2 point : Edges.getInsideEdges(block.size)){
                 Tile tile = world.tile(x + point.x, y + point.y);
-                if(tile != null && tile.block() instanceof Buoy) return true;
+                if(tile != null && tile.block() instanceof Buoy) return false;
             }
 
             for(Point2 point : Edges.getEdges(block.size)){
@@ -196,12 +196,13 @@ public class Build{
                 if(tile != null && tile.block() instanceof Buoy) return true;
             }
         }else{
+            Tile tile = world.tile(x, y);
+            if(tile != null && tile.block() instanceof Buoy) return false;
+
             for(Point2 point : Geometry.d4){
-                Tile tile = world.tile(x + point.x, y + point.y);
+                tile = world.tile(x + point.x, y + point.y);
                 if(tile != null && tile.block() instanceof Buoy) return true;
             }
-            Tile tile = world.tile(x, y);
-            return tile != null && tile.block() instanceof Buoy;
         }
         return false;
     }
