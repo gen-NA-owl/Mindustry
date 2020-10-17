@@ -13,6 +13,7 @@ import mindustry.game.*;
 import mindustry.gen.*;
 import mindustry.world.blocks.*;
 import mindustry.world.blocks.ConstructBlock.*;
+import mindustry.world.blocks.liquid.*;
 
 import static mindustry.Vars.*;
 
@@ -111,7 +112,7 @@ public class Build{
             return false;
         }
 
-        if(!type.requiresWater && !contactsShallows(tile.x, tile.y, type) && !type.placeableLiquid){
+        if(!type.requiresWater && !contactsShallows(tile.x, tile.y, type) && !contactsBuoys(tile.x, tile.y, type) && !type.placeableLiquid){
             return false;
         }
 
@@ -131,7 +132,7 @@ public class Build{
 
                 if(
                 check == null || //nothing there
-                (check.floor().isDeep() && !type.floating && !type.requiresWater && !type.placeableLiquid) || //deep water
+                (check.floor().isDeep() && !type.floating && !type.requiresWater && !type.placeableLiquid && !contactsBuoys(check.x, check.y, type)) || //deep water
                 (type == check.block() && check.build != null && rotation == check.build.rotation && type.rotate) || //same block, same rotation
                 !check.interactable(team) || //cannot interact
                 !check.floor().placeableOn || //solid wall
@@ -179,6 +180,28 @@ public class Build{
             }
             Tile tile = world.tile(x, y);
             return tile != null && !tile.floor().isDeep();
+        }
+        return false;
+    }
+
+    public static boolean contactsBuoys(int x, int y, Block block) {
+        if(block.isMultiblock()){
+            for(Point2 point : Edges.getInsideEdges(block.size)){
+                Tile tile = world.tile(x + point.x, y + point.y);
+                if(tile != null && tile.block() instanceof Buoy) return true;
+            }
+
+            for(Point2 point : Edges.getEdges(block.size)){
+                Tile tile = world.tile(x + point.x, y + point.y);
+                if(tile != null && tile.block() instanceof Buoy) return true;
+            }
+        }else{
+            for(Point2 point : Geometry.d4){
+                Tile tile = world.tile(x + point.x, y + point.y);
+                if(tile != null && tile.block() instanceof Buoy) return true;
+            }
+            Tile tile = world.tile(x, y);
+            return tile != null && tile.block() instanceof Buoy;
         }
         return false;
     }

@@ -62,7 +62,7 @@ public class Blocks implements ContentList{
     overflowGate, underflowGate, massDriver, payloadConveyor, payloadRouter,
 
     //liquid
-    mechanicalPump, rotaryPump, thermalPump, conduit, pulseConduit, platedConduit, liquidRouter, liquidTank, liquidJunction, bridgeConduit, phaseConduit,
+    mechanicalPump, rotaryPump, thermalPump, conduit, pulseConduit, platedConduit, liquidRouter, liquidTank, liquidJunction, bridgeConduit, phaseConduit, buoy, 
 
     //power
     combustionGenerator, thermalGenerator, steamGenerator, differentialGenerator, rtgGenerator, solarPanel, largeSolarPanel, thoriumReactor,
@@ -1105,6 +1105,10 @@ public class Blocks implements ContentList{
             hasPower = true;
             canOverdrive = false;
             consumes.power(0.30f);
+        }};
+
+        buoy = new Buoy("buoy"){{
+            requirements(Category.liquid, with(Items.copper, 2, Items.silicon, 2, Items.metaglass, 5));
         }};
 
         //endregion
