@@ -10,10 +10,10 @@ import mindustry.world.blocks.power.SolarGenerator.*;
 
 import static mindustry.Vars.*;
 
-public class SolarTower extends ItemLiquidGenerator{
+public class HeliostatGenerator extends ItemLiquidGenerator{
     public float range = 150f;
 
-    public SolarTower(String name){
+    public HeliostatGenerator(String name){
         super(false, true, name);
     }
 
@@ -34,8 +34,8 @@ public class SolarTower extends ItemLiquidGenerator{
         return 1f;
     }
 
-    public class SolarTowerBuild extends ItemLiquidGeneratorBuild{
-        /** Power production in this block means the multiplier of power */
+    public class HeliostatGeneratorBuild extends ItemLiquidGeneratorBuild{
+        /** Power production in this block means the multiplier of power, and there is a different variable keeping track of power */
         public float currentPowerProduction = 0f;
 
         @Override
@@ -47,9 +47,9 @@ public class SolarTower extends ItemLiquidGenerator{
         public void updateTile(){
             currentPowerProduction = 0f;
             if(enabled && productionEfficiency > 0.001f) {
-                indexer.eachBlock(this, range, other -> other.block instanceof SolarGenerator && !((SolarGeneratorBuild)other).linkedTower, other -> {
-                    ((SolarGeneratorBuild)other).linkedTower = true;
-                    currentPowerProduction += enabled ? ((SolarGenerator)other.block).powerProduction * powerProduction : 0f;
+                indexer.eachBlock(this, range, other -> other.block instanceof SolarGenerator, other -> {
+                    currentPowerProduction += ((SolarGenerator)other.block).powerProduction * ((SolarGeneratorBuild)other).productionEfficiency * powerProduction;
+                    ((SolarGeneratorBuild)other).productionEfficiency = 0f;
                 });
             }
 

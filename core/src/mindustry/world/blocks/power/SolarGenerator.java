@@ -22,8 +22,6 @@ public class SolarGenerator extends PowerGenerator{
     }
 
     public class SolarGeneratorBuild extends GeneratorBuild{
-        /** Whether this solar panel is currently linked to a tower */
-        public boolean linkedTower = false;
         @Override
         public void updateTile(){
             productionEfficiency = enabled ?
@@ -32,8 +30,6 @@ public class SolarGenerator extends PowerGenerator{
                         1f - state.rules.ambientLight.a :
                         1f
                     )) : 0f;
-
-            linkedTower = false;
         }
     }
 }
