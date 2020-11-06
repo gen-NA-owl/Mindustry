@@ -38,6 +38,7 @@ public class AttributeSmelter extends GenericSmelter{
         super.setStats();
 
         stats.add(Stat.affinities, attribute, boostScale);
+        stats.add(Stat.maxEfficiency, (maxHeatBoost + 1f) * 100f, StatUnit.percent);
     }
 
     public class AttributeSmelterBuild extends SmelterBuild{

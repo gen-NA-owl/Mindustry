@@ -72,6 +72,7 @@ public enum Stat{
 
     booster(StatCat.optional),
     boostEffect(StatCat.optional),
+    maxEfficiency(StatCat.optional),
     affinities(StatCat.optional);
 
     public final StatCat category;
