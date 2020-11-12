@@ -2,10 +2,10 @@ package mindustry.mod;
 
 import arc.audio.*;
 import arc.mock.*;
-import arc.util.ArcAnnotate.*;
+import arc.util.*;
 
 public class ModLoadingMusic implements Music{
-    public @NonNull Music music = new MockMusic();
+    public Music music = new MockMusic();
 
     @Override
     public void play(){
@@ -70,6 +70,11 @@ public class ModLoadingMusic implements Music{
     @Override
     public void setCompletionListener(OnCompletionListener listener){
         music.setCompletionListener(listener);
+    }
+
+    @Override
+    public void setFilter(int index, @Nullable AudioFilter filter){
+        music.setFilter(index, filter);
     }
 
     @Override

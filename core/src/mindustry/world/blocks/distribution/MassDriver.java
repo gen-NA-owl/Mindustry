@@ -62,7 +62,7 @@ public class MassDriver extends Block{
         //check if a mass driver is selected while placing this driver
         if(!control.input.frag.config.isShown()) return;
         Building selected = control.input.frag.config.getSelectedTile();
-        if(selected == null || !(selected.block() instanceof MassDriver) || !(selected.within(x * tilesize, y * tilesize, range))) return;
+        if(selected == null || !(selected.block instanceof MassDriver) || !(selected.within(x * tilesize, y * tilesize, range))) return;
 
         //if so, draw a dotted line towards it while it is in range
         float sin = Mathf.absin(Time.time(), 6f, 1f);
@@ -104,6 +104,10 @@ public class MassDriver extends Block{
         public void updateTile(){
             Building link = world.build(this.link);
             boolean hasLink = linkValid();
+
+            if(hasLink){
+                this.link = link.pos();
+            }
 
             //reload regardless of state
             if(reload > 0f){
@@ -155,7 +159,7 @@ public class MassDriver extends Block{
 
                 if(
                 items.total() >= minDistribute && //must shoot minimum amount of items
-                link.block().itemCapacity - link.items.total() >= minDistribute //must have minimum amount of space
+                link.block.itemCapacity - link.items.total() >= minDistribute //must have minimum amount of space
                 ){
                     MassDriverBuild other = (MassDriverBuild)link;
                     other.waitingShooters.add(tile);
@@ -188,6 +192,9 @@ public class MassDriver extends Block{
 
             Draw.z(Layer.turret);
 
+            Drawf.shadow(region,
+            x + Angles.trnsx(rotation + 180f, reload * knockback) - (size / 2),
+            y + Angles.trnsy(rotation + 180f, reload * knockback) - (size / 2), rotation - 90);
             Draw.rect(region,
             x + Angles.trnsx(rotation + 180f, reload * knockback),
             y + Angles.trnsy(rotation + 180f, reload * knockback), rotation - 90);
@@ -207,9 +214,9 @@ public class MassDriver extends Block{
             }
 
             if(linkValid()){
-                Tile target = world.tile(link);
-                Drawf.circles(target.drawx(), target.drawy(), (target.block().size / 2f + 1) * tilesize + sin - 2f, Pal.place);
-                Drawf.arrow(x, y, target.drawx(), target.drawy(), size * tilesize + sin, 4f + sin);
+                Building target = world.build(link);
+                Drawf.circles(target.x, target.y, (target.block().size / 2f + 1) * tilesize + sin - 2f, Pal.place);
+                Drawf.arrow(x, y, target.x, target.y, size * tilesize + sin, 4f + sin);
             }
 
             Drawf.dashCircle(x, y, range, Pal.accent);
@@ -225,7 +232,7 @@ public class MassDriver extends Block{
             if(link == other.pos()){
                 configure(-1);
                 return false;
-            }else if(other.block() instanceof MassDriver && other.dst(tile) <= range && other.team == team){
+            }else if(other.block instanceof MassDriver && other.dst(tile) <= range && other.team == team){
                 configure(other.pos());
                 return false;
             }
@@ -248,7 +255,7 @@ public class MassDriver extends Block{
             data.to = target;
             int totalUsed = 0;
             for(int i = 0; i < content.items().size; i++){
-                int maxTransfer = Math.min(items.get(content.item(i)), ((MassDriver)tile.block()).itemCapacity - totalUsed);
+                int maxTransfer = Math.min(items.get(content.item(i)), tile.block().itemCapacity - totalUsed);
                 data.items[i] = maxTransfer;
                 totalUsed += maxTransfer;
                 items.remove(content.item(i), maxTransfer);
@@ -302,8 +309,8 @@ public class MassDriver extends Block{
 
         protected boolean linkValid(){
             if(link == -1) return false;
-            Tile link = world.tile(this.link);
-            return link != null && link.block() instanceof MassDriver && link.team() == tile.team() && tile.dst(link) <= range;
+            Building link = world.build(this.link);
+            return link instanceof MassDriverBuild && link.team == team && within(link, range);
         }
 
         @Override

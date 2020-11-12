@@ -1,19 +1,19 @@
 package mindustry.world.meta.values;
 
 import arc.*;
-import arc.struct.*;
 import arc.graphics.g2d.*;
 import arc.math.*;
 import arc.scene.ui.layout.*;
+import arc.struct.*;
 import arc.util.*;
 import mindustry.content.*;
-import mindustry.ctype.UnlockableContent;
+import mindustry.ctype.*;
 import mindustry.entities.bullet.*;
 import mindustry.gen.*;
-import mindustry.ui.Cicon;
+import mindustry.ui.*;
 import mindustry.world.meta.*;
 
-import static mindustry.Vars.tilesize;
+import static mindustry.Vars.*;
 
 public class AmmoListValue<T extends UnlockableContent> implements StatValue{
     private final ObjectMap<T, BulletType> map;
@@ -33,7 +33,7 @@ public class AmmoListValue<T extends UnlockableContent> implements StatValue{
             table.table(Tex.underline, bt -> {
                 bt.left().defaults().padRight(3).left();
 
-                if(type.damage > 0 && type.collides){
+                if(type.damage > 0 && (type.collides || type.splashDamage <= 0)){
                     bt.add(Core.bundle.format("bullet.damage", type.damage));
                 }
 
@@ -41,13 +41,20 @@ public class AmmoListValue<T extends UnlockableContent> implements StatValue{
                     sep(bt, Core.bundle.format("bullet.splashdamage", (int)type.splashDamage, Strings.fixed(type.splashDamageRadius / tilesize, 1)));
                 }
 
-                if(!Mathf.equal(type.ammoMultiplier, 1f))
+                if(!Mathf.equal(type.ammoMultiplier, 1f) && !(type instanceof LiquidBulletType)){
                     sep(bt, Core.bundle.format("bullet.multiplier", (int)type.ammoMultiplier));
-                if(!Mathf.equal(type.reloadMultiplier, 1f))
+                }
+
+                if(!Mathf.equal(type.reloadMultiplier, 1f)){
                     sep(bt, Core.bundle.format("bullet.reload", Strings.fixed(type.reloadMultiplier, 1)));
+                }
 
                 if(type.knockback > 0){
                     sep(bt, Core.bundle.format("bullet.knockback", Strings.fixed(type.knockback, 1)));
+                }
+
+                if(type.pierce || type.pierceCap != -1){
+                    sep(bt, type.pierceCap == -1 ? "@bullet.infinitepierce" : Core.bundle.format("bullet.pierce", type.pierceCap));
                 }
 
                 if((type.status == StatusEffects.burning || type.status == StatusEffects.melting) || type.incendAmount > 0){

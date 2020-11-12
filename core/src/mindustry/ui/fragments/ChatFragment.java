@@ -2,7 +2,6 @@ package mindustry.ui.fragments;
 
 import arc.*;
 import arc.Input.*;
-import arc.struct.*;
 import arc.graphics.*;
 import arc.graphics.g2d.*;
 import arc.math.*;
@@ -10,6 +9,7 @@ import arc.scene.*;
 import arc.scene.ui.*;
 import arc.scene.ui.Label.*;
 import arc.scene.ui.layout.*;
+import arc.struct.*;
 import arc.util.*;
 import mindustry.*;
 import mindustry.gen.*;
@@ -57,7 +57,7 @@ public class ChatFragment extends Table{
                 }
             }
 
-            return net.active();
+            return net.active() && ui.hudfrag.shown;
         });
 
         update(() -> {
@@ -163,15 +163,16 @@ public class ChatFragment extends Table{
 
         Draw.color();
 
-        if(fadetime > 0 && !shown)
+        if(fadetime > 0 && !shown){
             fadetime -= Time.delta / 180f;
+        }
     }
 
     private void sendMessage(){
-        String message = chatfield.getText();
+        String message = chatfield.getText().trim();
         clearChatInput();
 
-        if(message.replace(" ", "").isEmpty()) return;
+        if(message.isEmpty()) return;
 
         history.insert(1, message);
 
@@ -182,7 +183,7 @@ public class ChatFragment extends Table{
 
         if(!shown){
             scene.setKeyboardFocus(chatfield);
-            shown = !shown;
+            shown = true;
             if(mobile){
                 TextInput input = new TextInput();
                 input.maxLength = maxTextLength;
@@ -198,10 +199,13 @@ public class ChatFragment extends Table{
                 chatfield.fireClick();
             }
         }else{
-            scene.setKeyboardFocus(null);
-            shown = !shown;
-            scrollPos = 0;
-            sendMessage();
+            //sending chat has a delay; workaround for issue #1943
+            Time.run(2f, () ->{
+                scene.setKeyboardFocus(null);
+                shown = false;
+                scrollPos = 0;
+                sendMessage();
+            });
         }
     }
 
@@ -227,6 +231,7 @@ public class ChatFragment extends Table{
     }
 
     public void addMessage(String message, String sender){
+        if(sender == null && message == null) return;
         messages.insert(0, new ChatMessage(message, sender));
 
         fadetime += 1f;
@@ -244,7 +249,7 @@ public class ChatFragment extends Table{
             this.message = message;
             this.sender = sender;
             if(sender == null){ //no sender, this is a server message?
-                formattedMessage = message;
+                formattedMessage = message == null ? "" : message;
             }else{
                 formattedMessage = "[coral][[" + sender + "[coral]]:[white] " + message;
             }
