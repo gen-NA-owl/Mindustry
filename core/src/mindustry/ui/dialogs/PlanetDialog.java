@@ -267,7 +267,6 @@ public class PlanetDialog extends BaseDialog implements PlanetInterfaceRenderer{
         if(selectAlpha > 0.01f){
             for(Sector sec : planet.sectors){
                 if(canSelect(sec) || sec.unlocked() || debugSelect){
-
                     Color color =
                     sec.hasBase() ? Tmp.c2.set(Team.sharded.color).lerp(Team.crux.color, sec.hasEnemyBase() ? 0.5f : 0f) :
                     sec.preset != null ? Tmp.c2.set(Team.derelict.color).lerp(Color.white, Mathf.absin(Time.time(), 10f, 1f)) :
@@ -276,6 +275,8 @@ public class PlanetDialog extends BaseDialog implements PlanetInterfaceRenderer{
 
                     if(color != null){
                         planets.drawSelection(sec, Tmp.c1.set(color).mul(0.8f).a(selectAlpha), 0.026f, -0.001f);
+                    }else if(sec.threat >= 0.5f) {
+                        planets.drawSelection(sec, Team.crux.color, 0.026f * sec.threat, -0.001f);
                     }
                 }else{
                     planets.fill(sec, Tmp.c1.set(shadowColor).mul(1, 1, 1, selectAlpha), -0.001f);
