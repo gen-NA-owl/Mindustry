@@ -97,6 +97,10 @@ public class LiquidModule extends BlockModule{
         }
     }
 
+    public void remove(LiquidStack liquid){
+        add(liquid.liquid, -liquid.amount);
+    }
+
     public void remove(Liquid liquid, float amount){
         add(liquid, -amount);
     }
@@ -117,6 +121,17 @@ public class LiquidModule extends BlockModule{
             }
         }
         return sum;
+    }
+
+    public boolean has(Liquid liquid, float amount){
+        return get(liquid) >= amount;
+    }
+
+    public boolean has(LiquidStack[] stacks){
+        for(LiquidStack stack : stacks){
+            if(!has(stack.liquid, stack.amount)) return false;
+        }
+        return true;
     }
 
     @Override

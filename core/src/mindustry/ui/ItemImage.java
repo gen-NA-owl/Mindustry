@@ -3,6 +3,7 @@ package mindustry.ui;
 import arc.graphics.g2d.*;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.*;
+import arc.util.*;
 import mindustry.type.*;
 
 public class ItemImage extends Stack{
@@ -17,6 +18,20 @@ public class ItemImage extends Stack{
         add(new Table(t -> {
             t.left().bottom();
             t.add(amount + "");
+            t.pack();
+        }));
+    }
+
+    public ItemImage(TextureRegion region, float amount){
+
+        add(new Table(o -> {
+            o.left();
+            o.add(new Image(region)).size(32f);
+        }));
+
+        add(new Table(t -> {
+            t.left().bottom();
+            t.add(Strings.autoFixed(amount, 1) + "");
             t.pack();
         }));
     }

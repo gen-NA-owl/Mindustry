@@ -46,6 +46,10 @@ public class Consumers{
         return add(new ConsumeLiquid(liquid, amount));
     }
 
+    public ConsumeLiquids liquids(float timePeriod, LiquidStack... liquids){
+        return add(new ConsumeLiquids(timePeriod, liquids));
+    }
+
     /**
      * Creates a consumer which directly uses power without buffering it.
      * @param powerPerTick The amount of power which is required each tick for 100% efficiency.

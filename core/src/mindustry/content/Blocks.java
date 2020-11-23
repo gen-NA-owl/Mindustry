@@ -32,6 +32,7 @@ import mindustry.world.draw.*;
 import mindustry.world.meta.*;
 
 import static mindustry.type.ItemStack.*;
+import static mindustry.type.LiquidStack.*;
 
 public class Blocks implements ContentList{
     public static Block
@@ -613,7 +614,7 @@ public class Blocks implements ContentList{
             hasPower = true;
 
             consumes.power(4f);
-            consumes.items(with(Items.copper, 3, Items.lead, 4, Items.titanium, 2, Items.silicon, 3));
+            consumes.liquids(craftTime, with(Liquids.water, 1f, Liquids.oil, 1f, Liquids.cryofluid, 1f));
         }};
 
         cryofluidMixer = new LiquidConverter("cryofluid-mixer"){{
