@@ -37,7 +37,7 @@ abstract class StatusComp implements Posc, Flyingc{
             for(int i = 0; i < statuses.size; i ++){
                 StatusEntry entry = statuses.get(i);
                 //extend effect
-                if(entry.effect == effect){
+                if(entry.effect == effect && !entry.effect.stackable){
                     entry.time = Math.max(entry.time, duration);
                     return;
                 }else if(entry.effect.reactsWith(effect)){ //find opposite

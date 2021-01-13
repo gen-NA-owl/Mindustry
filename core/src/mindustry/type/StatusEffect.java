@@ -25,6 +25,8 @@ public class StatusEffect extends MappableContent{
     public float effectChance = 0.15f;
     /** If true, the effect never disappears. */
     public boolean permanent;
+    /** Whether this effect can stack with itself. */
+    public boolean stackable = false;
     /** Tint color of effect. */
     public Color color = Color.white.cpy();
     /** Effect that happens randomly on top of the affected unit. */
@@ -56,7 +58,8 @@ public class StatusEffect extends MappableContent{
         }
 
         if(effect != Fx.none && Mathf.chanceDelta(effectChance)){
-            Tmp.v1.rnd(unit.type.hitSize /2f);
+            //might be better if aren't always on a ring around the unit
+            Tmp.v1.rnd(unit.type.hitSize /2f).scl((float)Math.random());
             effect.at(unit.x + Tmp.v1.x, unit.y + Tmp.v1.y);
         }
     }

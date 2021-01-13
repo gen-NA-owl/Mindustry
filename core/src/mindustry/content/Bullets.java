@@ -334,12 +334,13 @@ public class Bullets implements ContentList{
             lifetime = 60f;
         }};
 
-        standardIncendiary = new BasicBulletType(3.2f, 11, "bullet"){{
+        standardIncendiary = new BasicBulletType(3.2f, 1f, "bullet"){{
             width = 10f;
             height = 12f;
             frontColor = Pal.lightishOrange;
             backColor = Pal.lightOrange;
             status = StatusEffects.burning;
+            statusDuration = 1000f * 60f;
             makeFire = true;
             inaccuracy = 3f;
             lifetime = 60f;
