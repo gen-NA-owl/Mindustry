@@ -54,7 +54,7 @@ public class LiquidBulletType extends BulletType{
         if(liquid.canExtinguish()){
             Tile tile = world.tileWorld(b.x, b.y);
             if(tile != null && Fires.has(tile.x, tile.y)){
-                Fires.extinguish(tile, 100f);
+                Fires.extinguish(tile, 50f / liquid.temperature);
                 b.remove();
                 hit(b);
             }
