@@ -93,17 +93,18 @@ public class Conveyor extends Block implements Autotiler{
         }
 
         ItemBridge bridge = (ItemBridge)Blocks.itemBridge;
-        Boolf<Integer> check = rot -> 
-            !Build.validPlace(req.block, null, req.x + Geometry.d4x(rot), req.y + Geometry.d4y(rot), -1) && //front blocked
+        Boolf<Point2> check = p -> 
+            !Build.validPlace(req.block, null, req.x + p.x, req.y + p.y, -1) && //front blocked
             requests.contains(o -> 
             Build.validPlace(req.block, null, o.x, o.y, -1) && //valid
             (o.block instanceof Conveyor || o.block instanceof ItemBridge) && 
-            Mathf.clamp(o.x - req.x, -1, 1) == Geometry.d4x(rot) && //in front
-            Mathf.clamp(o.y - req.y, -1, 1) == Geometry.d4y(rot) && 
+            Mathf.clamp(o.x - req.x, -1, 1) == p.x && //in front
+            Mathf.clamp(o.y - req.y, -1, 1) == p.y && 
             Mathf.dstm(req.x, req.y, o.x, o.y) <= bridge.range); //in range
 
         if(Build.validPlace(req.block, null, req.x, req.y, -1) && 
-            (check.get(req.rotation) || check.get(req.rotation + 2))){
+            (check.get(Geometry.d4(req.rotation)) || 
+            check.get(Geometry.d4(req.rotation - 2)))){
             return bridge;
         }
 
