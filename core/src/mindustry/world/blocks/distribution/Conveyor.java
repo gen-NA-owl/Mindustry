@@ -84,11 +84,30 @@ public class Conveyor extends Block implements Autotiler{
     @Override
     public Block getReplacement(BuildPlan req, Seq<BuildPlan> requests){
         Boolf<Point2> cont = p -> requests.contains(o -> o.x == req.x + p.x && o.y == req.y + p.y && (req.block instanceof Conveyor || req.block instanceof Junction));
-        return cont.get(Geometry.d4(req.rotation)) &&
+        if(cont.get(Geometry.d4(req.rotation)) &&
             cont.get(Geometry.d4(req.rotation - 2)) &&
             req.tile() != null &&
             req.tile().block() instanceof Conveyor &&
-            Mathf.mod(req.tile().build.rotation - req.rotation, 2) == 1 ? Blocks.junction : this;
+            Mathf.mod(req.tile().build.rotation - req.rotation, 2) == 1) {
+            return Blocks.junction;
+        }
+
+        ItemBridge bridge = (ItemBridge)Blocks.itemBridge;
+        Boolf<Integer> check = rot -> 
+            !Build.validPlace(req.block, null, req.x + Geometry.d4x(rot), req.y + Geometry.d4y(rot), -1) && //front blocked
+            requests.contains(o -> 
+            Build.validPlace(req.block, null, o.x, o.y, -1) && //valid
+            (o.block instanceof Conveyor || o.block instanceof ItemBridge) && 
+            Mathf.clamp(o.x - req.x, -1, 1) == Geometry.d4x(rot) && //in front
+            Mathf.clamp(o.y - req.y, -1, 1) == Geometry.d4y(rot) && 
+            Mathf.dstm(req.x, req.y, o.x, o.y) <= bridge.range); //in range
+
+        if(Build.validPlace(req.block, null, req.x, req.y, -1) && 
+            (check.get(req.rotation) || check.get(req.rotation + 2))){
+            return bridge;
+        }
+
+        return this;
     }
 
     public class ConveyorBuild extends Building implements ChainedBuilding{

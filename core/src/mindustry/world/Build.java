@@ -117,7 +117,7 @@ public class Build{
             return false;
         }
 
-        if(state.teams.eachEnemyCore(team, core -> Mathf.dst(x * tilesize + type.offset, y * tilesize + type.offset, core.x, core.y) < state.rules.enemyCoreBuildRadius + type.size * tilesize / 2f)){
+        if(team != null && state.teams.eachEnemyCore(team, core -> Mathf.dst(x * tilesize + type.offset, y * tilesize + type.offset, core.x, core.y) < state.rules.enemyCoreBuildRadius + type.size * tilesize / 2f)){
             return false;
         }
 
@@ -134,7 +134,7 @@ public class Build{
             return false;
         }
 
-        if(!type.canPlaceOn(tile, team)){
+        if(team != null && !type.canPlaceOn(tile, team)){
             return false;
         }
 
@@ -151,7 +151,7 @@ public class Build{
                 check == null || //nothing there
                 (check.floor().isDeep() && !type.floating && !type.requiresWater && !type.placeableLiquid) || //deep water
                 (type == check.block() && check.build != null && rotation == check.build.rotation && type.rotate) || //same block, same rotation
-                !check.interactable(team) || //cannot interact
+                (team != null && !check.interactable(team)) || //cannot interact
                 !check.floor().placeableOn || //solid wall
                     !((type.canReplace(check.block()) || //can replace type
                         //controversial change: allow rebuilding damaged blocks
