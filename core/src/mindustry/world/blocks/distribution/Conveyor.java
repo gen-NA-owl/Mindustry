@@ -96,8 +96,8 @@ public class Conveyor extends Block implements Autotiler{
         Boolf<Point2> check = p -> 
             !Build.validPlace(req.block, null, req.x + p.x, req.y + p.y, -1) && //front blocked
             requests.contains(o -> 
-            Build.validPlace(req.block, null, o.x, o.y, -1) && //valid
             (o.block instanceof Conveyor || o.block instanceof ItemBridge) && 
+            Build.validPlace(req.block, null, o.x, o.y, -1) && //valid
             Mathf.clamp(o.x - req.x, -1, 1) == p.x && //in front
             Mathf.clamp(o.y - req.y, -1, 1) == p.y && 
             Mathf.dstm(req.x, req.y, o.x, o.y) <= bridge.range); //in range
