@@ -195,6 +195,10 @@ public class NetServer implements ApplicationListener{
                 return;
             }
 
+            if(packet.locale == null){
+                packet.locale = "en_US";
+            }
+
             String ip = con.address;
 
             admins.updatePlayerJoined(uuid, ip, packet.name);
@@ -215,6 +219,7 @@ public class NetServer implements ApplicationListener{
             player.con.uuid = uuid;
             player.con.mobile = packet.mobile;
             player.name = packet.name;
+            player.locale = packet.locale;
             player.color.set(packet.color).a(1f);
 
             //save admin ID but don't overwrite it
@@ -845,13 +850,15 @@ public class NetServer implements ApplicationListener{
 
     public void writeEntitySnapshot(Player player) throws IOException{
         syncStream.reset();
-        Seq<CoreBuild> cores = state.teams.cores(player.team());
+        int sum = state.teams.present.sum(t -> t.cores.size);
 
-        dataStream.writeByte(cores.size);
+        dataStream.writeInt(sum);
 
-        for(CoreBuild entity : cores){
-            dataStream.writeInt(entity.tile.pos());
-            entity.items.write(Writes.get(dataStream));
+        for(TeamData data : state.teams.present){
+            for(CoreBuild entity : data.cores){
+                dataStream.writeInt(entity.tile.pos());
+                entity.items.write(Writes.get(dataStream));
+            }
         }
 
         dataStream.close();

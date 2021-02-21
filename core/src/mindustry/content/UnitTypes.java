@@ -150,7 +150,7 @@ public class UnitTypes implements ContentList{
             hitSize = 20f;
             rotateSpeed = 2.1f;
             health = 9000;
-            armor = 11f;
+            armor = 10f;
             canDrown = false;
             mechFrontSway = 1f;
 
@@ -182,7 +182,7 @@ public class UnitTypes implements ContentList{
                     lightningLength = 6;
                     lightningColor = Pal.surge;
                     //standard bullet damage is far too much for lightning
-                    lightningDamage = 20;
+                    lightningDamage = 19;
                 }};
             }},
 
@@ -418,8 +418,8 @@ public class UnitTypes implements ContentList{
             engineSize = 6f;
             lowAltitude = true;
 
-            health = 7000f;
-            armor = 7f;
+            health = 7200f;
+            armor = 8f;
             canBoost = true;
             landShake = 4f;
             immunities = ObjectSet.with(StatusEffects.burning);
@@ -435,7 +435,7 @@ public class UnitTypes implements ContentList{
 
                 firstShotDelay = Fx.greenLaserChargeSmall.lifetime - 1f;
 
-                reload = 160f;
+                reload = 155f;
                 recoil = 0f;
                 chargeSound = Sounds.lasercharge2;
                 shootSound = Sounds.beam;
@@ -443,8 +443,8 @@ public class UnitTypes implements ContentList{
                 cooldownTime = 200f;
 
                 bullet = new ContinuousLaserBulletType(){{
-                    damage = 23f;
-                    length = 160f;
+                    damage = 26f;
+                    length = 170f;
                     hitEffect = Fx.hitMeltHeal;
                     drawSize = 420f;
                     lifetime = 160f;
@@ -454,7 +454,7 @@ public class UnitTypes implements ContentList{
 
                     shootEffect = Fx.greenLaserChargeSmall;
 
-                    incendChance = 0.075f;
+                    incendChance = 0.08f;
                     incendSpread = 5f;
                     incendAmount = 1;
 
@@ -565,9 +565,9 @@ public class UnitTypes implements ContentList{
                     hitEffect = Fx.pulverize;
                     lifetime = 10f;
                     speed = 1f;
-                    splashDamageRadius = 70f;
+                    splashDamageRadius = 58f;
                     instantDisappear = true;
-                    splashDamage = 80f;
+                    splashDamage = 85f;
                     killShooter = true;
                     hittable = false;
                     collidesAir = true;
@@ -769,7 +769,7 @@ public class UnitTypes implements ContentList{
                     width = height = 19f;
                     collidesTiles = true;
                     ammoMultiplier = 4f;
-                    splashDamageRadius = 95f;
+                    splashDamageRadius = 80f;
                     splashDamage = 65f;
                     backColor = Pal.sapBulletBack;
                     frontColor = lightningColor = Pal.sapBullet;
@@ -867,7 +867,7 @@ public class UnitTypes implements ContentList{
                     width = height = 25f;
                     collidesTiles = collides = true;
                     ammoMultiplier = 4f;
-                    splashDamageRadius = 90f;
+                    splashDamageRadius = 80f;
                     splashDamage = 75f;
                     backColor = Pal.sapBulletBack;
                     frontColor = lightningColor = Pal.sapBullet;
@@ -888,7 +888,7 @@ public class UnitTypes implements ContentList{
                         lifetime = 90f;
                         width = height = 20f;
                         collidesTiles = false;
-                        splashDamageRadius = 80f;
+                        splashDamageRadius = 70f;
                         splashDamage = 40f;
                         backColor = Pal.sapBulletBack;
                         frontColor = lightningColor = Pal.sapBullet;
@@ -1366,8 +1366,8 @@ public class UnitTypes implements ContentList{
                     collides = false;
 
                     healPercent = 15f;
-                    splashDamage = 230f;
-                    splashDamageRadius = 120f;
+                    splashDamage = 220f;
+                    splashDamageRadius = 80f;
                 }};
             }});
         }};
@@ -1537,7 +1537,7 @@ public class UnitTypes implements ContentList{
                     width = 15f;
                     collidesTiles = false;
                     ammoMultiplier = 4f;
-                    splashDamageRadius = 60f;
+                    splashDamageRadius = 40f;
                     splashDamage = 80f;
                     backColor = Pal.missileYellowBack;
                     frontColor = Pal.missileYellow;
@@ -1590,7 +1590,7 @@ public class UnitTypes implements ContentList{
         }};
 
         sei = new UnitType("sei"){{
-            health = 10000;
+            health = 10500;
             armor = 12f;
 
             speed = 0.73f;
