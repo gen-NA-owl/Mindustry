@@ -211,7 +211,7 @@ public class ContentParser{
                     throw new IllegalArgumentException("When defining properties for an existing block, you must not re-declare its type. The original type will be used. Block: " + name);
                 }
             }else{
-                block = make(resolve(getType(value), Block.class), mod + "-" + name);
+                block = make(resolve(value.getString("type", ""), Block.class), mod + "-" + name);
             }
 
             currentContent = block;
@@ -406,6 +406,12 @@ public class ContentParser{
             this.currentMod = mod;
             this.currentContent = cont;
             run.run();
+
+            //check nulls after parsing
+            if(cont != null){
+                toBeParsed.remove(cont);
+                checkNullFields(cont);
+            }
         });
     }
 
