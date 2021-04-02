@@ -35,6 +35,10 @@ public class GenericCrafter extends Block{
         flags = EnumSet.of(BlockFlag.factory);
     }
 
+    public float consumeTime(){
+        return craftTime;
+    }
+
     @Override
     public void setStats(){
         super.setStats();

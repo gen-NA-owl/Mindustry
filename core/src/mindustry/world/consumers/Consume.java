@@ -70,4 +70,8 @@ public abstract class Consume{
     public abstract boolean valid(Building entity);
 
     public abstract void display(Stats stats);
+
+    public void display(Stats stats, float time){
+        display(stats);
+    };
 }

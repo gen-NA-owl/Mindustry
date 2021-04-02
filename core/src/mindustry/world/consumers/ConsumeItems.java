@@ -70,4 +70,13 @@ public class ConsumeItems extends Consume{
     public void display(Stats stats){
         stats.add(booster ? Stat.booster : Stat.input, new ItemListValue(items));
     }
+
+    @Override
+    public void display(Stats stats, float time){
+        if(time > 0){
+            stats.add(booster ? Stat.booster : Stat.input, new ItemListValue(true, time, items));
+        }else{
+            display(stats);
+        }
+    };
 }

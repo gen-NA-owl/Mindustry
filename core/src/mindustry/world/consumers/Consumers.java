@@ -118,10 +118,10 @@ public class Consumers{
         return optionalResults;
     }
 
-    public void display(Stats stats){
+    public void display(Stats stats, float time){
         for(Consume c : map){
             if(c != null){
-                c.display(stats);
+                c.display(stats, time);
             }
         }
     }

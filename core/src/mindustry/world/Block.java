@@ -351,6 +351,10 @@ public class Block extends UnlockableContent{
         return update || destructible;
     }
 
+    public float consumeTime(){
+        return -1f;
+    }
+
     @Override
     public void setStats(){
         super.setStats();
@@ -370,7 +374,7 @@ public class Block extends UnlockableContent{
             stats.add(Stat.maxConsecutive, 2, StatUnit.none);
         }
 
-        consumes.display(stats);
+        consumes.display(stats, consumeTime());
 
         //Note: Power stats are added by the consumers.
         if(hasLiquids) stats.add(Stat.liquidCapacity, liquidCapacity, StatUnit.liquidUnits);
