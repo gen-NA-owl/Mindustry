@@ -30,6 +30,8 @@ public abstract class UnlockableContent extends MappableContent{
     public boolean inlineDescription = true;
     /** Special logic icon ID. */
     public int iconId = 0;
+    /** Whether this is hidden in the Core Database. */
+    public boolean hidden = false;
     /** Icons by Cicon ID.*/
     protected TextureRegion[] cicons = new TextureRegion[Cicon.all.length];
     /** Unlock state. Loaded from settings. Do not modify outside of the constructor. */
@@ -116,7 +118,7 @@ public abstract class UnlockableContent extends MappableContent{
 
     /** Whether this content is always hidden in the content database dialog. */
     public boolean isHidden(){
-        return false;
+        return hidden;
     }
 
     /** @return whether to show a notification toast when this is unlocked */
