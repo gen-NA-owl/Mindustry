@@ -53,6 +53,7 @@ public class Weathers implements ContentList{
             baseSpeed = 5.4f;
             attrs.set(Attribute.light, -0.1f);
             attrs.set(Attribute.water, -0.1f);
+            attrs.set(Attribute.wind, 1f);
             opacityMultiplier = 0.35f;
             force = 0.1f;
             sound = Sounds.wind;
@@ -74,6 +75,7 @@ public class Weathers implements ContentList{
             baseSpeed = 4.3f;
             attrs.set(Attribute.spores, 1f);
             attrs.set(Attribute.light, -0.15f);
+            attrs.set(Attribute.wind, 1f);
             status = StatusEffects.sporeSlowed;
             opacityMultiplier = 0.5f;
             force = 0.1f;

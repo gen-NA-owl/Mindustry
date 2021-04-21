@@ -12,7 +12,9 @@ public enum Attribute{
     /** Oil content of this block. Used for increasing oil extractor yield. */
     oil,
     /** Light coverage. Negative values decrease solar panel efficiency. */
-    light;
+    light,
+    /** Wind speed. Values larger than one allow wind turbines to function. */
+    wind;
 
     public static final Attribute[] all = values();
 

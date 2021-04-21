@@ -177,6 +177,29 @@ public class BlockIndexer{
         return Geometry.findClosest(x, y, getAllied(team, flag));
     }
 
+    public void eachTile(float wx, float wy, float range, Boolf<Tile> pred, Cons<Tile> cons){
+        intSet.clear();
+
+        int tx = World.toTile(wx);
+        int ty = World.toTile(wy);
+
+        int tileRange = (int)(range / tilesize + 1);
+
+        for(int x = -tileRange + tx; x <= tileRange + tx; x++){
+            for(int y = -tileRange + ty; y <= tileRange + ty; y++){
+                if(!Mathf.within(x * tilesize, y * tilesize, wx, wy, range)) continue;
+
+                Tile other = world.tile(x, y);
+
+                if(other == null) continue;
+
+                if(pred.get(other) && intSet.add(other.pos())){
+                    cons.get(other);
+                }
+            }
+        }
+    }
+
     public boolean eachBlock(Teamc team, float range, Boolf<Building> pred, Cons<Building> cons){
         return eachBlock(team.team(), team.getX(), team.getY(), range, pred, cons);
     }
