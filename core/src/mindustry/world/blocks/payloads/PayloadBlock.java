@@ -13,7 +13,7 @@ import mindustry.world.*;
 import static mindustry.Vars.*;
 
 public class PayloadBlock extends Block{
-    public float payloadSpeed = 0.5f, payloadRotateSpeed = 5f;
+    public float payloadSpeed = 0.7f, payloadRotateSpeed = 5f;
 
     public @Load(value = "@-top", fallback = "factory-top-@size") TextureRegion topRegion;
     public @Load(value = "@-out", fallback = "factory-out-@size") TextureRegion outRegion;
@@ -79,7 +79,7 @@ public class PayloadBlock extends Block{
 
         @Override
         public boolean canControlSelect(Player player){
-            return !player.unit().spawnedByCore && this.payload == null && acceptUnitPayload(player.unit()) && player.tileOn().build == this;
+            return !player.unit().spawnedByCore && this.payload == null && acceptUnitPayload(player.unit()) && player.tileOn() != null && player.tileOn().build == this;
         }
 
         @Override
@@ -193,8 +193,14 @@ public class PayloadBlock extends Block{
         }
 
         public void dumpPayload(){
+            //translate payload forward slightly
+            float tx = Angles.trnsx(payload.rotation(), 0.1f), ty = Angles.trnsy(payload.rotation(), 0.1f);
+            payload.set(payload.x() + tx, payload.y() + ty, payload.rotation());
+
             if(payload.dump()){
                 payload = null;
+            }else{
+                payload.set(payload.x() - tx, payload.y() - ty, payload.rotation());
             }
         }
 

@@ -33,6 +33,7 @@ import mindustry.world.blocks.power.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.blocks.sandbox.*;
 import mindustry.world.blocks.storage.*;
+import mindustry.world.blocks.storage.CoreBlock.*;
 import mindustry.world.meta.*;
 
 import java.io.*;
@@ -114,6 +115,7 @@ public class Schematics implements Loadable{
         target.tiles.addAll(newSchematic.tiles);
         target.width = newSchematic.width;
         target.height = newSchematic.height;
+        newSchematic.labels = target.labels;
         newSchematic.tags.putAll(target.tags);
         newSchematic.file = target.file;
 
@@ -432,6 +434,11 @@ public class Schematics implements Loadable{
                 if(seq.contains(t -> !t.block().alwaysReplace && !t.synthetic())){
                     return;
                 }
+                for(var t : seq){
+                    if(t.block() != Blocks.air){
+                        t.remove();
+                    }
+                }
             }
 
             tile.setBlock(st.block, team, st.rotation);
@@ -443,6 +450,10 @@ public class Schematics implements Loadable{
 
             if(st.block instanceof Drill){
                 tile.getLinkedTiles(t -> t.setOverlay(resource));
+            }
+
+            if(tile.build instanceof CoreBuild cb){
+                state.teams.registerCore(cb);
             }
         });
     }

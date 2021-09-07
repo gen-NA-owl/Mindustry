@@ -33,13 +33,14 @@ public class MinimapRenderer{
             updateAll();
         });
 
-        //make sure to call on the graphics thread
         Events.on(TileChangeEvent.class, event -> {
             //TODO don't update when the minimap is off?
             if(!ui.editor.isShown()){
                 update(event.tile);
             }
         });
+
+        Events.on(BuildTeamChangeEvent.class, event -> update(event.build.tile));
     }
 
     public Pixmap getPixmap(){
@@ -143,6 +144,14 @@ public class MinimapRenderer{
 
     public void update(Tile tile){
         if(world.isGenerating() || !state.isGame()) return;
+
+        if(tile.build != null && tile.isCenter()){
+            tile.getLinkedTiles(other -> {
+                if(!other.isCenter()){
+                    update(other);
+                }
+            });
+        }
 
         int color = colorFor(tile);
         pixmap.set(tile.x, pixmap.height - 1 - tile.y, color);

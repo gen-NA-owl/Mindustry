@@ -28,6 +28,7 @@ abstract class FireComp implements Timedc, Posc, Syncc, Drawc{
     public static final TextureRegion[] regions = new TextureRegion[frames];
 
     @Import float time, lifetime, x, y;
+    @Import int id;
 
     Tile tile;
     private transient Block block;
@@ -35,7 +36,7 @@ abstract class FireComp implements Timedc, Posc, Syncc, Drawc{
         baseFlammability = -1, puddleFlammability, damageTimer = Mathf.random(40f),
         spreadTimer = Mathf.random(spreadDelay), fireballTimer = Mathf.random(fireballDelay),
         warmup = 0f,
-        animation = Mathf.random(frames);
+        animation = Mathf.random(frames - 1);
 
     @Override
     public void update(){
@@ -56,7 +57,7 @@ abstract class FireComp implements Timedc, Posc, Syncc, Drawc{
             return;
         }
 
-        if(time >= lifetime || tile == null){
+        if(time >= lifetime || tile == null || Float.isNaN(lifetime)){
             remove();
             return;
         }
@@ -116,8 +117,10 @@ abstract class FireComp implements Timedc, Posc, Syncc, Drawc{
 
         Draw.alpha(Mathf.clamp(warmup / warmupDuration));
         Draw.z(Layer.effect);
-        Draw.rect(regions[(int)animation], x, y);
+        Draw.rect(regions[Math.min((int)animation, regions.length - 1)], x + Mathf.randomSeedRange((int)y, 2), y + Mathf.randomSeedRange((int)x, 2));
         Draw.reset();
+
+        Drawf.light(x, y, 50f + Mathf.absin(5f, 5f), Pal.lightFlame, 0.6f  * Mathf.clamp(warmup / warmupDuration));
     }
 
     @Replace

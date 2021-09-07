@@ -6,6 +6,7 @@ import arc.math.*;
 import arc.math.geom.*;
 import arc.struct.*;
 import arc.util.*;
+import arc.util.io.*;
 import mindustry.annotations.Annotations.*;
 import mindustry.content.*;
 import mindustry.entities.units.*;
@@ -37,6 +38,7 @@ public class Duct extends Block implements Autotiler{
         itemCapacity = 1;
         noUpdateDisabled = true;
         rotate = true;
+        noSideBlend = true;
         envEnabled = Env.space | Env.terrestrial | Env.underwater;
     }
 
@@ -146,7 +148,7 @@ public class Duct extends Block implements Autotiler{
         @Override
         public boolean acceptItem(Building source, Item item){
             return current == null && items.total() == 0 &&
-                (source.block instanceof Duct || Edges.getFacingEdge(source.tile(), tile).relativeTo(tile) == rotation);
+                ((source.block.rotate && source.front() == this && source.block.hasItems) || Edges.getFacingEdge(source.tile(), tile).relativeTo(tile) == rotation);
         }
 
         @Override
@@ -182,6 +184,26 @@ public class Duct extends Block implements Autotiler{
             blending = bits[4];
             next = front();
             nextc = next instanceof DuctBuild d ? d : null;
+        }
+
+        @Override
+        public byte version(){
+            return 1;
+        }
+
+        @Override
+        public void write(Writes write){
+            super.write(write);
+            write.b(recDir);
+        }
+
+        @Override
+        public void read(Reads read, byte revision){
+            super.read(read, revision);
+            if(revision >= 1){
+                recDir = read.b();
+            }
+            current = items.first();
         }
     }
 }

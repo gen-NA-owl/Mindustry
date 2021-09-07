@@ -1,5 +1,6 @@
 package mindustry.io;
 
+import arc.audio.*;
 import arc.graphics.*;
 import arc.math.geom.*;
 import arc.struct.*;
@@ -501,6 +502,15 @@ public class TypeIO{
         return id == -1 ? null : content.item(id);
     }
 
+    //note that only the standard sound constants in Sounds are supported; modded sounds are not.
+    public static void writeSound(Writes write, Sound sound){
+        write.s(Sounds.getSoundId(sound));
+    }
+
+    public static Sound readSound(Reads read){
+        return Sounds.getSound(read.s());
+    }
+
     public static void writeWeather(Writes write, Weather item){
         write.s(item == null ? -1 : item.id);
     }
@@ -588,6 +598,30 @@ public class TypeIO{
         return new TraceInfo(readString(read), readString(read), read.b() == 1, read.b() == 1, read.i(), read.i());
     }
 
+    public static void writeStrings(Writes write, String[][] strings){
+        write.b(strings.length);
+        for(String[] string : strings){
+            write.b(string.length);
+            for(String s : string){
+                writeString(write, s);
+            }
+        }
+    }
+
+    public static String[][] readStrings(Reads read){
+        int rows = read.ub();
+
+        String[][] strings = new String[rows][];
+        for(int i = 0; i < rows; i++){
+            int columns = read.ub();
+            strings[i] = new String[columns];
+            for(int j = 0; j < columns; j++){
+                strings[i][j] = readString(read);
+            }
+        }
+        return strings;
+    }
+
     public static void writeStringData(DataOutput buffer, String string) throws IOException{
         if(string != null){
             byte[] bytes = string.getBytes(charset);
@@ -609,7 +643,7 @@ public class TypeIO{
         }
     }
 
-    /** Representes a building that has not been resolved yet. */
+    /** Represents a building that has not been resolved yet. */
     public static class BuildingBox{
         public int pos;
 

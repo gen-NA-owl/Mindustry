@@ -9,6 +9,7 @@ import mindustry.net.*;
 import mindustry.net.Packets.*;
 import mindustry.type.*;
 import mindustry.world.*;
+import mindustry.world.blocks.storage.CoreBlock.*;
 
 public class EventType{
 
@@ -131,6 +132,18 @@ public class EventType{
 
         public ClientPreConnectEvent(Host host){
             this.host = host;
+        }
+    }
+
+    /** Consider using Menus.registerMenu instead. */
+    public static class MenuOptionChooseEvent{
+        public final Player player;
+        public final int menuId, option;
+
+        public MenuOptionChooseEvent(Player player, int menuId, int option){
+            this.player = player;
+            this.option = option;
+            this.menuId = menuId;
         }
     }
 
@@ -271,6 +284,30 @@ public class EventType{
         }
     }
 
+    /**
+     * Called after a building's team changes.
+     * Event object is reused, do not nest!
+     * */
+    public static class BuildTeamChangeEvent{
+        public Team previous;
+        public Building build;
+
+        public BuildTeamChangeEvent set(Team previous, Building build){
+            this.build = build;
+            this.previous = previous;
+            return this;
+        }
+    }
+
+    /** Called when a core block is placed/removed or its team is changed. */
+    public static class CoreChangeEvent{
+        public CoreBuild core;
+
+        public CoreChangeEvent(CoreBuild core){
+            this.core = core;
+        }
+    }
+
     public static class StateChangeEvent{
         public final State from, to;
 
@@ -374,14 +411,29 @@ public class EventType{
         }
     }
 
-    /** Called when a unit is created in a reconstructor or factory. */
+    /** Called when a unit is created in a reconstructor, factory or other unit. */
     public static class UnitCreateEvent{
         public final Unit unit;
-        public final Building spawner;
+        public final @Nullable Building spawner;
+        public final @Nullable Unit spawnerUnit;
 
-        public UnitCreateEvent(Unit unit, Building spawner){
+        public UnitCreateEvent(Unit unit, Building spawner, Unit spawnerUnit){
             this.unit = unit;
             this.spawner = spawner;
+            this.spawnerUnit = spawnerUnit;
+        }
+
+        public UnitCreateEvent(Unit unit, Building spawner){
+            this(unit, spawner, null);
+        }
+    }
+
+    /** Called when a unit is spawned by wave. */
+    public static class UnitSpawnEvent{
+        public final Unit unit;
+
+        public UnitSpawnEvent(Unit unit) {
+            this.unit = unit;
         }
     }
 

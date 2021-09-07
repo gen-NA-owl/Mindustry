@@ -29,6 +29,7 @@ import mindustry.gen.*;
 import mindustry.graphics.*;
 import mindustry.mod.Mods.*;
 import mindustry.type.*;
+import mindustry.type.ammo.*;
 import mindustry.type.weather.*;
 import mindustry.world.*;
 import mindustry.world.blocks.units.*;
@@ -61,6 +62,7 @@ public class ContentParser{
         });
         put(Interp.class, (type, data) -> field(Interp.class, data));
         put(CacheLayer.class, (type, data) -> field(CacheLayer.class, data));
+        put(Attribute.class, (type, data) -> Attribute.get(data.asString()));
         put(Schematic.class, (type, data) -> {
             Object result = fieldOpt(Loadouts.class, data);
             if(result != null){
@@ -75,9 +77,10 @@ public class ContentParser{
             }
         });
         put(StatusEffect.class, (type, data) -> {
-            Object result = fieldOpt(StatusEffects.class, data);
-            if(result != null){
-                return result;
+            if(data.isString()){
+                StatusEffect result = locate(ContentType.status, data.asString());
+                if(result != null) return result;
+                throw new IllegalArgumentException("Unknown status effect: '" + data.asString() + "'");
             }
             StatusEffect effect = new StatusEffect(currentMod.name + "-" + data.getString("name"));
             readFields(effect, data);
@@ -91,6 +94,19 @@ public class ContentParser{
             var bc = resolve(data.getString("type", ""), BasicBulletType.class);
             data.remove("type");
             BulletType result = make(bc);
+            readFields(result, data);
+            return result;
+        });
+        put(AmmoType.class, (type, data) -> {
+            //string -> item
+            //if liquid ammo support is added, this should scan for liquids as well
+            if(data.isString()) return new ItemAmmoType(find(ContentType.item, data.asString()));
+            //number -> power
+            if(data.isNumber()) return new PowerAmmoType(data.asFloat());
+
+            var bc = resolve(data.getString("type", ""), ItemAmmoType.class);
+            data.remove("type");
+            AmmoType result = make(bc);
             readFields(result, data);
             return result;
         });
@@ -120,6 +136,11 @@ public class ContentParser{
             return sound;
         });
         put(Objectives.Objective.class, (type, data) -> {
+            if(data.isString()){
+                var cont = locateAny(data.asString());
+                if(cont == null) throw new IllegalArgumentException("Unknown objective content: " + data.asString());
+                return new Research((UnlockableContent)cont);
+            }
             var oc = resolve(data.getString("type", ""), SectorComplete.class);
             data.remove("type");
             Objectives.Objective obj = make(oc);
@@ -227,6 +248,7 @@ public class ContentParser{
                             case "item" -> block.consumes.item(find(ContentType.item, child.asString()));
                             case "items" -> block.consumes.add((Consume)parser.readValue(ConsumeItems.class, child));
                             case "liquid" -> block.consumes.add((Consume)parser.readValue(ConsumeLiquid.class, child));
+                            case "coolant" -> block.consumes.add((Consume)parser.readValue(ConsumeCoolant.class, child));
                             case "power" -> {
                                 if(child.isNumber()){
                                     block.consumes.power(child.asFloat());
@@ -542,6 +564,16 @@ public class ContentParser{
         return first != null ? first : Vars.content.getByName(type, currentMod.name + "-" + name);
     }
 
+    private <T extends MappableContent> T locateAny(String name){
+        for(ContentType t : ContentType.all){
+            var out = locate(t, name);
+            if(out != null){
+                return (T)out;
+            }
+        }
+        return null;
+    }
+
     <T> T make(Class<T> type){
         try{
             Constructor<T> cons = type.getDeclaredConstructor();
@@ -678,18 +710,31 @@ public class ContentParser{
                 lastNode.remove();
             }
 
-            TechNode node = new TechNode(null, unlock, customRequirements == null ? unlock.researchRequirements() : customRequirements);
+            TechNode node = new TechNode(null, unlock, customRequirements == null ? ItemStack.empty : customRequirements);
             LoadedMod cur = currentMod;
 
             postreads.add(() -> {
                 currentContent = unlock;
                 currentMod = cur;
 
+                //add custom objectives
+                if(research.has("objectives")){
+                    node.objectives.addAll(parser.readValue(Objective[].class, research.get("objectives")));
+                }
+
+                //all items have a produce requirement unless already specified
+                if(object instanceof Item i && !node.objectives.contains(o -> o instanceof Produce p && p.content == i)){
+                    node.objectives.add(new Produce(i));
+                }
+
                 //remove old node from parent
                 if(node.parent != null){
                     node.parent.children.remove(node);
                 }
 
+                if(customRequirements == null){
+                    node.setupRequirements(unlock.researchRequirements());
+                }
 
                 //find parent node.
                 TechNode parent = TechTree.all.find(t -> t.content.name.equals(researchName) || t.content.name.equals(currentMod.name + "-" + researchName));
@@ -716,14 +761,14 @@ public class ContentParser{
     /** Tries to resolve a class from the class type map. */
     <T> Class<T> resolve(String base, Class<T> def){
         //no base class specified
-        if(base.isEmpty() && def != null) return def;
+        if((base == null || base.isEmpty()) && def != null) return def;
 
         //return mapped class if found in the global map
         var out = ClassMap.classes.get(!base.isEmpty() && Character.isLowerCase(base.charAt(0)) ? Strings.capitalize(base) : base);
         if(out != null) return (Class<T>)out;
 
-        //try to resolve it as a raw class name if it's allowed
-        if(base.indexOf('.') != -1 && Scripts.allowClass(base)){
+        //try to resolve it as a raw class name
+        if(base.indexOf('.') != -1){
             try{
                 return (Class<T>)Class.forName(base);
             }catch(Exception ignored){

@@ -49,7 +49,16 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
     transient float healTime;
     private transient float resupplyTime = Mathf.random(10f);
     private transient boolean wasPlayer;
-    private transient float lastHealth;
+    private transient boolean wasHealed;
+
+    /** Move based on preferred unit movement type. */
+    public void movePref(Vec2 movement){
+        if(type.omniMovement){
+            moveAt(movement);
+        }else{
+            rotateMove(movement);
+        }
+    }
 
     public void moveAt(Vec2 vector){
         moveAt(vector, type.accel);
@@ -57,6 +66,14 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
 
     public void approach(Vec2 vector){
         vel.approachDelta(vector, type.accel * realSpeed());
+    }
+
+    public void rotateMove(Vec2 vec){
+        moveAt(Tmp.v2.trns(rotation, vec.len()));
+
+        if(!vec.isZero()){
+            rotation = Angles.moveToward(rotation, vec.angle(), type.rotateSpeed * Math.max(Time.delta, 1));
+        }
     }
 
     public void aimLook(Position pos){
@@ -87,15 +104,18 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
         return type.hasWeapons();
     }
 
+    /** @return speed with boost & floor multipliers factored in. */
     public float speed(){
         float strafePenalty = isGrounded() || !isPlayer() ? 1f : Mathf.lerp(1f, type.strafePenalty, Angles.angleDist(vel().angle(), rotation) / 180f);
+        float boost = Mathf.lerp(1f, type.canBoost ? type.boostMultiplier : 1f, elevation);
         //limit speed to minimum formation speed to preserve formation
-        return (isCommanding() ? minFormationSpeed * 0.98f : type.speed) * strafePenalty;
+        return (isCommanding() ? minFormationSpeed * 0.98f : type.speed) * strafePenalty * boost * floorSpeedMultiplier();
     }
 
-    /** @return speed with boost multipliers factored in. */
+    /** @deprecated use speed() instead */
+    @Deprecated
     public float realSpeed(){
-        return Mathf.lerp(1f, type.canBoost ? type.boostMultiplier : 1f, elevation) * speed() * floorSpeedMultiplier();
+        return speed();
     }
 
     /** Iterates through this unit and everything it is controlling. */
@@ -125,6 +145,9 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
     public float clipSize(){
         if(isBuilding()){
             return state.rules.infiniteResources ? Float.MAX_VALUE : Math.max(type.clipSize, type.region.width) + buildingRange + tilesize*4f;
+        }
+        if(mining()){
+            return type.clipSize + type.miningRange;
         }
         return type.clipSize;
     }
@@ -321,15 +344,22 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
     }
 
     @Override
+    public void heal(float amount){
+        if(health < maxHealth && amount > 0){
+            wasHealed = true;
+        }
+    }
+
+    @Override
     public void update(){
 
         type.update(self());
 
-        if(health > lastHealth && lastHealth > 0 && healTime <= -1f){
+        if(wasHealed && healTime <= -1f){
             healTime = 1f;
         }
         healTime -= Time.delta / 20f;
-        lastHealth = health;
+        wasHealed = false;
 
         //check if environment is unsupported
         if(!type.supportsEnv(state.rules.environment) && !dead){
@@ -390,7 +420,7 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
             //move down
             elevation -= type.fallSpeed * Time.delta;
 
-            if(isGrounded()){
+            if(isGrounded() || health <= -maxHealth){
                 Call.unitDestroy(id);
             }
         }
@@ -450,7 +480,7 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
         float power = item().charge * stack().amount * 150f;
 
         if(!spawnedByCore){
-            Damage.dynamicExplosion(x, y, flammability, explosiveness, power, bounds() / 2f, state.rules.damageExplosions, item().flammability > 1, team);
+            Damage.dynamicExplosion(x, y, flammability, explosiveness, power, bounds() / 2f, state.rules.damageExplosions, item().flammability > 1, team, type.deathExplosionEffect);
         }
 
         float shake = hitSize / 3f;
@@ -521,7 +551,7 @@ abstract class UnitComp implements Healthc, Physicsc, Hitboxc, Statusc, Teamc, I
     @Override
     public void killed(){
         wasPlayer = isLocal();
-        health = 0;
+        health = Math.min(health, 0);
         dead = true;
 
         //don't waste time when the unit is already on the ground, just destroy it

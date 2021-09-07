@@ -12,6 +12,7 @@ import mindustry.gen.*;
 import mindustry.type.*;
 import mindustry.world.*;
 import mindustry.world.blocks.*;
+import mindustry.world.blocks.storage.*;
 
 import static mindustry.Vars.*;
 
@@ -24,9 +25,12 @@ public class PayloadSource extends PayloadBlock{
         size = 3;
         update = true;
         outputsPayload = true;
-        hasPower = true;
+        hasPower = false;
         rotate = true;
         configurable = true;
+        //make sure to display large units.
+        clipSize = 120;
+        noUpdateDisabled = true;
 
         config(Block.class, (PayloadSourceBuild build, Block block) -> {
             if(canProduce(block) && build.block != block){
@@ -45,6 +49,13 @@ public class PayloadSource extends PayloadBlock{
                 build.scl = 0f;
             }
         });
+
+        configClear((PayloadSourceBuild build) -> {
+            build.block = null;
+            build.unit = null;
+            build.payload = null;
+            build.scl = 0f;
+        });
     }
 
     @Override
@@ -60,11 +71,11 @@ public class PayloadSource extends PayloadBlock{
     }
 
     public boolean canProduce(Block b){
-        return b.isVisible() && b.size < size;
+        return b.isVisible() && b.size < size && !(b instanceof CoreBlock) && !state.rules.bannedBlocks.contains(b);
     }
 
     public boolean canProduce(UnitType t){
-        return !t.isHidden();
+        return !t.isHidden() && !t.isBanned();
     }
     
     public class PayloadSourceBuild extends PayloadBlockBuild<Payload>{

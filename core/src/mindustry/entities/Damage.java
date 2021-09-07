@@ -31,15 +31,25 @@ public class Damage{
 
     /** Creates a dynamic explosion based on specified parameters. */
     public static void dynamicExplosion(float x, float y, float flammability, float explosiveness, float power, float radius, boolean damage){
-        dynamicExplosion(x, y, flammability, explosiveness, power, radius, damage, true, null);
+        dynamicExplosion(x, y, flammability, explosiveness, power, radius, damage, true, null, Fx.dynamicExplosion);
+    }
+
+    /** Creates a dynamic explosion based on specified parameters. */
+    public static void dynamicExplosion(float x, float y, float flammability, float explosiveness, float power, float radius, boolean damage, Effect explosionFx){
+        dynamicExplosion(x, y, flammability, explosiveness, power, radius, damage, true, null, explosionFx);
     }
 
     /** Creates a dynamic explosion based on specified parameters. */
     public static void dynamicExplosion(float x, float y, float flammability, float explosiveness, float power, float radius, boolean damage, boolean fire, @Nullable Team ignoreTeam){
+        dynamicExplosion(x, y, flammability, explosiveness, power, radius, damage, fire, ignoreTeam, Fx.dynamicExplosion);
+    }
+
+    /** Creates a dynamic explosion based on specified parameters. */
+    public static void dynamicExplosion(float x, float y, float flammability, float explosiveness, float power, float radius, boolean damage, boolean fire, @Nullable Team ignoreTeam, Effect explosionFx){
         if(damage){
             for(int i = 0; i < Mathf.clamp(power / 700, 0, 8); i++){
-                int length = 5 + Mathf.clamp((int)(power / 500), 1, 20);
-                Time.run(i * 0.8f + Mathf.random(4f), () -> Lightning.create(Team.derelict, Pal.power, 3, x, y, Mathf.random(360f), length + Mathf.range(2)));
+                int length = 5 + Mathf.clamp((int)(Mathf.pow(power, 0.98f) / 500), 1, 18);
+                Time.run(i * 0.8f + Mathf.random(4f), () -> Lightning.create(Team.derelict, Pal.power, 3 + Mathf.pow(power, 0.35f), x, y, Mathf.random(360f), length + Mathf.range(2)));
             }
 
             if(fire){
@@ -69,7 +79,7 @@ public class Damage{
 
         float shake = Math.min(explosiveness / 4f + 3f, 9f);
         Effect.shake(shake, shake, x, y);
-        Fx.dynamicExplosion.at(x, y, radius / 8f);
+        explosionFx.at(x, y, radius / 8f);
     }
 
     public static void createIncend(float x, float y, float range, int amount){
@@ -455,8 +465,8 @@ public class Damage{
         for(int dx = -trad; dx <= trad; dx++){
             for(int dy = -trad; dy <= trad; dy++){
                 Tile tile = world.tile(Math.round(x / tilesize) + dx, Math.round(y / tilesize) + dy);
-                if(tile != null && tile.build != null && (team == null ||team.isEnemy(tile.team())) && Mathf.dst(dx, dy) <= trad){
-                    tile.build.damage(damage);
+                if(tile != null && tile.build != null && (team == null ||team.isEnemy(tile.team())) && dx*dx + dy*dy <= trad){
+                    tile.build.damage(team, damage);
                 }
             }
         }

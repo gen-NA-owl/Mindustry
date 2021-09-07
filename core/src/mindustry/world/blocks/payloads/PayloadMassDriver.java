@@ -34,7 +34,7 @@ public class PayloadMassDriver extends PayloadBlock{
     public Sound shootSound = Sounds.shootBig;
     public float shake = 3f;
 
-    public Effect transferEffect = new Effect(11f, 300f, e -> {
+    public Effect transferEffect = new Effect(11f, 600f, e -> {
         if(!(e.data instanceof PayloadMassDriverData data)) return;
         Tmp.v1.set(data.x, data.y).lerp(data.ox, data.oy, Interp.sineIn.apply(e.fin()));
         data.payload.set(Tmp.v1.x, Tmp.v1.y, e.rotation);
@@ -60,10 +60,17 @@ public class PayloadMassDriver extends PayloadBlock{
         sync = true;
         rotate = true;
         outputsPayload = true;
+        group = BlockGroup.units;
 
         //point2 is relative
         config(Point2.class, (PayloadDriverBuild tile, Point2 point) -> tile.link = Point2.pack(point.x + tile.tileX(), point.y + tile.tileY()));
         config(Integer.class, (PayloadDriverBuild tile, Integer point) -> tile.link = point);
+    }
+
+    @Override
+    public void init(){
+        super.init();
+        clipSize = Math.max(clipSize, range*2f + tilesize*size);
     }
 
     @Override
@@ -122,7 +129,8 @@ public class PayloadMassDriver extends PayloadBlock{
         public float turretRotation = 90;
         public float reload = 0f, charge = 0f;
         public float targetSize = grabWidth*2f, curSize = targetSize;
-        public float payLength = 0f;
+        public float payLength = 0f, effectDelayTimer = -1f;
+        public PayloadDriverBuild lastOther;
         public boolean loaded;
         public boolean charging;
         public PayloadDriverState state = idle;
@@ -151,6 +159,16 @@ public class PayloadMassDriver extends PayloadBlock{
                 targetSize = payload.size();
             }
 
+            boolean pos = effectDelayTimer > 0;
+            effectDelayTimer -= Time.delta;
+            if(effectDelayTimer <= 0 && pos && lastOther != null){
+                var other = lastOther;
+                float cx = Angles.trnsx(other.turretRotation, length), cy = Angles.trnsy(other.turretRotation, length);
+                receiveEffect.at(x - cx/2f, y - cy/2f, turretRotation);
+                reload = 1f;
+                Effect.shake(shake, shake, this);
+            }
+
             charging = false;
 
             if(hasLink){
@@ -167,6 +185,7 @@ public class PayloadMassDriver extends PayloadBlock{
             if(current != null &&
                 !(
                     current instanceof PayloadDriverBuild entity &&
+                    current.isValid() &&
                     entity.consValid() && entity.block == block &&
                     entity.link == pos() && within(current, range)
                 )){
@@ -192,7 +211,7 @@ public class PayloadMassDriver extends PayloadBlock{
                         payVector.setZero();
                         payRotation = Angles.moveToward(payRotation, turretRotation + 180f, payloadRotateSpeed * delta());
                     }
-                }else{
+                }else if(effectDelayTimer <= 0){
                     moveOutPayload();
                 }
             }
@@ -270,26 +289,22 @@ public class PayloadMassDriver extends PayloadBlock{
                                 transferEffect.at(x + cx, y + cy, turretRotation, new PayloadMassDriverData(x + cx, y + cy, other.x - cx, other.y - cy, payload));
                                 Payload pay = payload;
                                 other.recPayload = payload;
+                                other.effectDelayTimer = transferEffect.lifetime;
 
-                                Time.run(transferEffect.lifetime, () -> {
-                                    receiveEffect.at(other.x - cx/2f, other.y - cy/2f, other.turretRotation);
-                                    Effect.shake(shake, shake, this);
+                                //transfer payload
+                                other.handlePayload(this, pay);
+                                other.lastOther = this;
+                                other.payVector.set(-cx, -cy);
+                                other.payRotation = turretRotation;
+                                other.payLength = length;
+                                other.loaded = true;
+                                other.updatePayload();
+                                other.recPayload = null;
 
-                                    //transfer payload
-                                    other.reload = 1f;
-                                    other.handlePayload(this, pay);
-                                    other.payVector.set(-cx, -cy);
-                                    other.payRotation = turretRotation;
-                                    other.payLength = length;
-                                    other.loaded = true;
-                                    other.updatePayload();
-                                    other.recPayload = null;
-
-                                    if(other.waitingShooters.size != 0 && other.waitingShooters.first() == this){
-                                        other.waitingShooters.removeFirst();
-                                    }
-                                    other.state = idle;
-                                });
+                                if(other.waitingShooters.size != 0 && other.waitingShooters.first() == this){
+                                    other.waitingShooters.removeFirst();
+                                }
+                                other.state = idle;
 
                                 //reset state after shooting immediately
                                 payload = null;
@@ -341,8 +356,10 @@ public class PayloadMassDriver extends PayloadBlock{
             if(payload != null){
                 updatePayload();
 
-                Draw.z(loaded ? Layer.blockOver + 0.2f : Layer.blockOver);
-                payload.draw();
+                if(effectDelayTimer <= 0){
+                    Draw.z(loaded ? Layer.blockOver + 0.2f : Layer.blockOver);
+                    payload.draw();
+                }
             }
 
             Draw.z(Layer.blockOver + 0.1f);
@@ -440,7 +457,13 @@ public class PayloadMassDriver extends PayloadBlock{
 
         @Override
         public Point2 config(){
+            if(tile == null) return null;
             return Point2.unpack(link).sub(tile.x, tile.y);
+        }
+
+        @Override
+        public byte version(){
+            return 1;
         }
 
         @Override
@@ -449,6 +472,11 @@ public class PayloadMassDriver extends PayloadBlock{
             write.i(link);
             write.f(turretRotation);
             write.b((byte)state.ordinal());
+
+            write.f(reload);
+            write.f(charge);
+            write.bool(loaded);
+            write.bool(charging);
         }
 
         @Override
@@ -457,6 +485,13 @@ public class PayloadMassDriver extends PayloadBlock{
             link = read.i();
             turretRotation = read.f();
             state = PayloadDriverState.all[read.b()];
+
+            if(revision >= 1){
+                reload = read.f();
+                charge = read.f();
+                loaded = read.bool();
+                charging = read.bool();
+            }
         }
     }
 

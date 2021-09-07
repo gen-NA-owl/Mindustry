@@ -58,6 +58,7 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
     public Group uiGroup;
     public boolean isBuilding = true, buildWasAutoPaused = false, wasShooting = false;
     public @Nullable UnitType controlledType;
+    public float recentRespawnTimer;
 
     public @Nullable Schematic lastSchematic;
     public GestureDetector detector;
@@ -107,7 +108,7 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
         if(build == null || build.items == null) return;
         build.items.set(item, amount);
     }
-    
+
     @Remote(called = Loc.server, unreliable = true)
     public static void clearItems(Building build){
         if(build == null || build.items == null) return;
@@ -130,22 +131,25 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
 
     @Remote(called = Loc.both, targets = Loc.both, forward = true, unreliable = true)
     public static void deletePlans(Player player, int[] positions){
-        if(netServer.admins.allowAction(player, ActionType.removePlanned, a -> a.plans = positions)){
+        if(net.server() && !netServer.admins.allowAction(player, ActionType.removePlanned, a -> a.plans = positions)){
+            throw new ValidateException(player, "Player cannot remove plans.");
+        }
 
-            var it = state.teams.get(player.team()).blocks.iterator();
-            //O(n^2) search here; no way around it
-            outer:
-            while(it.hasNext()){
-                BlockPlan req = it.next();
+        if(player == null) return;
 
-                for(int pos : positions){
-                    if(req.x == Point2.x(pos) && req.y == Point2.y(pos)){
-                        it.remove();
-                        continue outer;
-                    }
+        var it = player.team().data().blocks.iterator();
+        //O(n^2) search here; no way around it
+        outer:
+        while(it.hasNext()){
+            BlockPlan req = it.next();
+
+            for(int pos : positions){
+                if(req.x == Point2.x(pos) && req.y == Point2.y(pos)){
+                    req.removed = true;
+                    it.remove();
+                    continue outer;
                 }
             }
-
         }
     }
 
@@ -226,7 +230,7 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
 
         Unit unit = player.unit();
 
-        if(build != null && build.team == unit.team
+        if(build != null && state.teams.canInteract(unit.team, build.team)
         && unit.within(build, tilesize * build.block.size * 1.2f + tilesize * 5f)){
 
             //pick up block's payload
@@ -352,7 +356,7 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
         Events.fire(new TapEvent(player, tile));
     }
 
-    @Remote(targets = Loc.both, called = Loc.both, forward = true)
+    @Remote(targets = Loc.both, called = Loc.server, forward = true)
     public static void buildingControlSelect(Player player, Building build){
         if(player == null || build == null || player.dead()) return;
 
@@ -380,25 +384,33 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
             player.clearUnit();
             //make sure it's AI controlled, so players can't overwrite each other
         }else if(unit.isAI() && unit.team == player.team() && !unit.dead){
-            if(!net.client()){
-                player.unit(unit);
+            if(net.client() && player.isLocal()){
+                player.justSwitchFrom = player.unit();
+                player.justSwitchTo = unit;
             }
+
+            player.unit(unit);
 
             Time.run(Fx.unitSpirit.lifetime, () -> Fx.unitControl.at(unit.x, unit.y, 0f, unit));
             if(!player.dead()){
                 Fx.unitSpirit.at(player.x, player.y, 0f, unit);
             }
+        }else if(net.server()){
+            //reject forwarding the packet if the unit was dead, AI or team
+            throw new ValidateException(player, "Player attempted to control invalid unit.");
         }
 
         Events.fire(new UnitControlEvent(player, unit));
     }
 
-    @Remote(targets = Loc.both, called = Loc.both, forward = true)
+    @Remote(targets = Loc.both, called = Loc.server, forward = true)
     public static void unitClear(Player player){
         if(player == null) return;
 
+        //problem: this gets called on both ends. it shouldn't be.
         Fx.spawn.at(player);
         player.clearUnit();
+        player.checkSpawn();
         player.deathTimer = Player.deathDelay + 1f; //for instant respawn
     }
 
@@ -419,7 +431,6 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
             player.unit().commandNearby(new CircleFormation());
             Fx.commandSend.at(player, player.unit().type.commandRadius);
         }
-
     }
 
     public Eachable<BuildPlan> allRequests(){
@@ -434,24 +445,26 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
         return !selectRequests.isEmpty();
     }
 
-    public OverlayFragment getFrag(){
-        return frag;
-    }
-
     public void update(){
         player.typing = ui.chatfrag.shown();
+
+        if(player.dead()){
+            droppingItem = false;
+        }
 
         if(player.isBuilder()){
             player.unit().updateBuilding(isBuilding);
         }
 
-        if(player.shooting && !wasShooting && player.unit().hasWeapons() && state.rules.unitAmmo && player.unit().ammo <= 0){
+        if(player.shooting && !wasShooting && player.unit().hasWeapons() && state.rules.unitAmmo && !player.team().rules().infiniteAmmo && player.unit().ammo <= 0){
             player.unit().type.weapons.first().noAmmoSound.at(player.unit());
         }
 
         wasShooting = player.shooting;
 
-        if(!player.dead()){
+        //only reset the controlled type and control a unit after the timer runs out
+        //essentially, this means the client waits for ~1 second after controlling something before trying to control something else automatically
+        if(!player.dead() && (recentRespawnTimer -= Time.delta / 70f) <= 0f && player.justSwitchFrom != player.unit()){
             controlledType = player.unit().type;
         }
 
@@ -461,6 +474,7 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
             if(unit != null){
                 //only trying controlling once a second to prevent packet spam
                 if(!net.client() || controlInterval.get(0, 70f)){
+                    recentRespawnTimer = 1f;
                     Call.unitControl(player, unit);
                 }
             }
@@ -494,7 +508,7 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
         }else{
             Building build = world.buildWorld(pay.x(), pay.y());
 
-            if(build != null && build.team == unit.team){
+            if(build != null && state.teams.canInteract(unit.team, build.team)){
                 Call.requestBuildPayload(player, build);
             }
         }
@@ -872,12 +886,13 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
         removed.clear();
 
         //remove blocks to rebuild
-        Iterator<BlockPlan> broken = state.teams.get(player.team()).blocks.iterator();
+        Iterator<BlockPlan> broken = player.team().data().blocks.iterator();
         while(broken.hasNext()){
             BlockPlan req = broken.next();
             Block block = content.block(req.block);
             if(block.bounds(req.x, req.y, Tmp.r2).overlaps(Tmp.r1)){
                 removed.add(Point2.pack(req.x, req.y));
+                req.removed = true;
                 broken.remove();
             }
         }
@@ -925,9 +940,9 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
         //check if tapped block is configurable
         if(build.block.configurable && build.interactable(player.team())){
             consumed = true;
-            if(((!frag.config.isShown() && build.shouldShowConfigure(player)) //if the config fragment is hidden, show
+            if((!frag.config.isShown() && build.shouldShowConfigure(player)) //if the config fragment is hidden, show
             //alternatively, the current selected block can 'agree' to switch config tiles
-            || (frag.config.isShown() && frag.config.getSelectedTile().onConfigureTileTapped(build)))){
+            || (frag.config.isShown() && frag.config.getSelectedTile().onConfigureTileTapped(build))){
                 Sounds.click.at(build);
                 frag.config.showConfig(build);
             }
@@ -1010,7 +1025,7 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
         return !Core.scene.hasMouse()
             && tile.drop() != null
             && player.unit().validMine(tile)
-            && !(tile.floor().playerUnmineable && tile.overlay().itemDrop == null)
+            && !((!Core.settings.getBool("doubletapmine") && tile.floor().playerUnmineable) && tile.overlay().itemDrop == null)
             && player.unit().acceptsItem(tile.drop())
             && tile.block() == Blocks.air;
     }
@@ -1227,12 +1242,14 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
             diagonal = !diagonal;
         }
 
+        int endRotation = -1;
         if(diagonal){
             var start = world.build(startX, startY);
             var end = world.build(endX, endY);
             if(block != null && start instanceof ChainedBuilding && end instanceof ChainedBuilding
                     && block.canReplace(end.block) && block.canReplace(start.block)){
                 points = Placement.upgradeLine(startX, startY, endX, endY);
+                endRotation = end.rotation;
             }else{
                 points = Placement.pathfindLine(block != null && block.conveyorPlacement, startX, startY, endX, endY);
             }
@@ -1266,6 +1283,8 @@ public abstract class InputHandler implements InputProcessor, GestureListener{
                 int result = baseRotation;
                 if(next != null){
                     result = Tile.relativeTo(point.x, point.y, next.x, next.y);
+                }else if(endRotation != -1){
+                    result = endRotation;
                 }else if(block.conveyorPlacement && i > 0){
                     Point2 prev = points.get(i - 1);
                     result = Tile.relativeTo(prev.x, prev.y, point.x, point.y);

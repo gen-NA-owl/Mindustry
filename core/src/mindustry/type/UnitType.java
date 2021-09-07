@@ -24,6 +24,7 @@ import mindustry.game.*;
 import mindustry.gen.*;
 import mindustry.graphics.*;
 import mindustry.graphics.MultiPacker.*;
+import mindustry.type.ammo.*;
 import mindustry.ui.*;
 import mindustry.world.*;
 import mindustry.world.blocks.environment.*;
@@ -41,7 +42,11 @@ public class UnitType extends UnlockableContent{
 
     /** If true, the unit is always at elevation 1. */
     public boolean flying;
+    /** If `flying` and this is true, the unit can appear on the title screen */
+    public boolean onTitleScreen = true;
+    /** Creates a new instance of this unit class. */
     public Prov<? extends Unit> constructor;
+    /** The default AI controller to assign on creation. */
     public Prov<? extends UnitController> defaultController = () -> !flying ? new GroundAI() : new FlyingAI();
 
     /** Environmental flags that are *all* required for this unit to function. 0 = any environment */
@@ -71,8 +76,14 @@ public class UnitType extends UnlockableContent{
     public boolean omniMovement = true;
     public Effect fallEffect = Fx.fallSmoke;
     public Effect fallThrusterEffect = Fx.fallSmoke;
+    public Effect deathExplosionEffect = Fx.dynamicExplosion;
+    /** Additional sprites that are drawn with the unit. */
+    public Seq<UnitDecal> decals = new Seq<>();
     public Seq<Ability> abilities = new Seq<>();
-    public BlockFlag targetFlag = BlockFlag.generator;
+    /** Flags to target based on priority. Null indicates that the closest target should be found. The closest enemy core is used as a fallback. */
+    public BlockFlag[] targetFlags = {null};
+    /** targetFlags, as an override for "non-AI" teams. By default, units of this type will rush the core. */
+    public BlockFlag[] playerTargetFlags = {BlockFlag.core, null};
 
     public Color outlineColor = Pal.darkerMetal;
     public int outlineRadius = 3;
@@ -83,9 +94,6 @@ public class UnitType extends UnlockableContent{
     public float legSplashDamage = 0f, legSplashRange = 5;
     public boolean flipBackLegs = true;
 
-    public int ammoResupplyAmount = 10;
-    public float ammoResupplyRange = 100f;
-
     public float mechSideSway = 0.54f, mechFrontSway = 0.1f;
     public float mechStride = -1f;
     public float mechStepShake = -1f;
@@ -94,7 +102,7 @@ public class UnitType extends UnlockableContent{
 
     public int itemCapacity = -1;
     public int ammoCapacity = -1;
-    public AmmoType ammoType = AmmoTypes.copper;
+    public AmmoType ammoType = new ItemAmmoType(Items.copper);
     public int mineTier = -1;
     public float buildSpeed = -1f, mineSpeed = 1f;
     public Sound mineSound = Sounds.minebeam;
@@ -117,6 +125,7 @@ public class UnitType extends UnlockableContent{
     public boolean canHeal = false;
     /** If true, all weapons will attack the same target. */
     public boolean singleTarget = false;
+    public boolean forceMultiTarget = false;
 
     public ObjectSet<StatusEffect> immunities = new ObjectSet<>();
     public Sound deathSound = Sounds.bang;
@@ -192,7 +201,7 @@ public class UnitType extends UnlockableContent{
             bars.row();
 
             if(state.rules.unitAmmo){
-                bars.add(new Bar(ammoType.icon + " " + Core.bundle.get("stat.ammo"), ammoType.barColor, () -> unit.ammo / ammoCapacity));
+                bars.add(new Bar(ammoType.icon() + " " + Core.bundle.get("stat.ammo"), ammoType.barColor(), () -> unit.ammo / ammoCapacity));
                 bars.row();
             }
 
@@ -229,6 +238,10 @@ public class UnitType extends UnlockableContent{
         return (envEnabled & env) != 0 && (envDisabled & env) == 0 && (envRequired == 0 || (envRequired & env) == envRequired);
     }
 
+    public boolean isBanned(){
+        return state.rules.bannedUnits.contains(this);
+    }
+
     @Override
     public void getDependencies(Cons<UnlockableContent> cons){
         //units require reconstructors being researched
@@ -254,7 +267,7 @@ public class UnitType extends UnlockableContent{
 
         stats.add(Stat.health, health);
         stats.add(Stat.armor, armor);
-        stats.add(Stat.speed, speed);
+        stats.add(Stat.speed, speed * 60f / tilesize, StatUnit.tilesSecond);
         stats.add(Stat.size, hitSize / tilesize, StatUnit.blocksSquared);
         stats.add(Stat.itemCapacity, itemCapacity);
         stats.add(Stat.range, (int)(maxRange / tilesize), StatUnit.blocks);
@@ -278,7 +291,7 @@ public class UnitType extends UnlockableContent{
 
         if(mineTier >= 1){
             stats.addPercent(Stat.mineSpeed, mineSpeed);
-            stats.add(Stat.mineTier, StatValues.blocks(b -> b instanceof Floor f && f.itemDrop != null && f.itemDrop.hardness <= mineTier && !f.playerUnmineable));
+            stats.add(Stat.mineTier, StatValues.blocks(b -> b instanceof Floor f && f.itemDrop != null && f.itemDrop.hardness <= mineTier && (!f.playerUnmineable || Core.settings.getBool("doubletapmine"))));
         }
         if(buildSpeed > 0){
             stats.addPercent(Stat.buildSpeed, buildSpeed);
@@ -304,6 +317,9 @@ public class UnitType extends UnlockableContent{
             canDrown = false;
             omniMovement = false;
             immunities.add(StatusEffects.wet);
+            if(visualElevation < 0f){
+                visualElevation = 0.11f;
+            }
         }
 
         if(lightRadius == -1){
@@ -311,10 +327,10 @@ public class UnitType extends UnlockableContent{
         }
 
         clipSize = Math.max(clipSize, lightRadius * 1.1f);
-        singleTarget = weapons.size <= 1;
+        singleTarget = weapons.size <= 1 && !forceMultiTarget;
 
         if(itemCapacity < 0){
-            itemCapacity = Math.max(Mathf.round((int)(hitSize * 4.3), 10), 10);
+            itemCapacity = Math.max(Mathf.round((int)(hitSize * 4f), 10), 10);
         }
 
         //assume slight range margin
@@ -381,9 +397,9 @@ public class UnitType extends UnlockableContent{
 
         //dynamically create ammo capacity based on firing rate
         if(ammoCapacity < 0){
-            float shotsPerSecond = weapons.sumf(w -> 60f / w.reload);
+            float shotsPerSecond = weapons.sumf(w -> w.useAmmo ? 60f / w.reload : 0f);
             //duration of continuous fire without reload
-            float targetSeconds = 30;
+            float targetSeconds = 35;
 
             ammoCapacity = Math.max(1, (int)(shotsPerSecond * targetSeconds));
         }
@@ -554,14 +570,26 @@ public class UnitType extends UnlockableContent{
             unit.trns(-legOffset.x, -legOffset.y);
         }
 
+        if(decals.size > 0){
+            float base = unit.rotation - 90;
+            for(var d : decals){
+                Draw.z(d.layer);
+                Draw.scl(d.xScale, d.yScale);
+                Draw.color(d.color);
+                Draw.rect(d.region, unit.x + Angles.trnsx(base, d.x, d.y), unit.y + Angles.trnsy(base, d.x, d.y), base + d.rotation);
+            }
+            Draw.reset();
+            Draw.z(z);
+        }
+
         if(unit.abilities.size > 0){
             for(Ability a : unit.abilities){
                 Draw.reset();
                 a.draw(unit);
             }
-
-            Draw.reset();
         }
+
+        Draw.reset();
     }
 
     public <T extends Unit & Payloadc> void drawPayload(T unit){
@@ -582,7 +610,7 @@ public class UnitType extends UnlockableContent{
     }
 
     public void drawControl(Unit unit){
-        Draw.z(Layer.groundUnit - 2);
+        Draw.z(unit.isFlying() ? Layer.flyingUnitLow : Layer.groundUnit - 2);
 
         Draw.color(Pal.accent, Color.white, Mathf.absin(4f, 0.3f));
         Lines.poly(unit.x, unit.y, 4, unit.hitSize + 1.5f);
@@ -612,7 +640,7 @@ public class UnitType extends UnlockableContent{
         if(unit.item() != null && unit.itemTime > 0.01f){
             float size = (itemSize + Mathf.absin(Time.time, 5f, 1f)) * unit.itemTime;
 
-            Draw.mixcol(Pal.accent, Mathf.absin(Time.time, 5f, 0.5f));
+            Draw.mixcol(Pal.accent, Mathf.absin(Time.time, 5f, 0.1f));
             Draw.rect(unit.item().fullIcon,
             unit.x + Angles.trnsx(unit.rotation + 180f, itemOffsetY),
             unit.y + Angles.trnsy(unit.rotation + 180f, itemOffsetY),
@@ -838,4 +866,5 @@ public class UnitType extends UnlockableContent{
     }
 
     //endregion
+
 }

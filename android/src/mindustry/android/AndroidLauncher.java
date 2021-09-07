@@ -15,11 +15,9 @@ import arc.func.*;
 import arc.scene.ui.layout.*;
 import arc.util.*;
 import dalvik.system.*;
-import io.anuke.mindustry.*;
 import mindustry.*;
 import mindustry.game.Saves.*;
 import mindustry.io.*;
-import mindustry.mod.*;
 import mindustry.net.*;
 import mindustry.ui.dialogs.*;
 
@@ -68,9 +66,7 @@ public class AndroidLauncher extends AndroidApplication{
 
             @Override
             public rhino.Context getScriptContext(){
-                rhino.Context result = AndroidRhinoContext.enter(((Context)AndroidLauncher.this).getCacheDir());
-                result.setClassShutter(Scripts::allowClass);
-                return result;
+                return AndroidRhinoContext.enter(getCacheDir());
             }
 
             @Override
@@ -79,7 +75,27 @@ public class AndroidLauncher extends AndroidApplication{
 
             @Override
             public ClassLoader loadJar(Fi jar, ClassLoader parent) throws Exception{
-                return new DexClassLoader(jar.file().getPath(), getFilesDir().getPath(), null, parent);
+                return new DexClassLoader(jar.file().getPath(), getFilesDir().getPath(), null, parent){
+                    @Override
+                    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException{
+                        //check for loaded state
+                        Class<?> loadedClass = findLoadedClass(name);
+                        if(loadedClass == null){
+                            try{
+                                //try to load own class first
+                                loadedClass = findClass(name);
+                            }catch(ClassNotFoundException | NoClassDefFoundError e){
+                                //use parent if not found
+                                return parent.loadClass(name);
+                            }
+                        }
+
+                        if(resolve){
+                            resolveClass(loadedClass);
+                        }
+                        return loadedClass;
+                    }
+                };
             }
 
             @Override
@@ -232,7 +248,7 @@ public class AndroidLauncher extends AndroidApplication{
         super.onResume();
 
         //TODO enable once GPGS is set up on the GP console
-        if(false && BuildConfig.FLAVOR.equals("gp")){
+        if(false && getPackageName().endsWith(".gp")){
             try{
                 if(gpService == null){
                     serviceClass = Class.forName("mindustry.android.GPGameService");

@@ -93,7 +93,7 @@ public class BulletType extends Content implements Cloneable{
     public boolean collides = true;
     /** Whether velocity is inherited from the shooter. */
     public boolean keepVelocity = true;
-    /** Whether to scale velocity to disappear at the target position. Used for artillery. */
+    /** Whether to scale lifetime (not actually velocity!) to disappear at the target position. Used for artillery. */
     public boolean scaleVelocity;
     /** Whether this bullet can be hit by point defense. */
     public boolean hittable = true;
@@ -163,6 +163,8 @@ public class BulletType extends Content implements Cloneable{
     public float puddleAmount = 5f;
     public Liquid puddleLiquid = Liquids.water;
 
+    public boolean displayAmmoMultiplier = true;
+
     public float lightRadius = -1f;
     public float lightOpacity = 0.3f;
     public Color lightColor = Pal.powerLight;
@@ -230,8 +232,8 @@ public class BulletType extends Content implements Cloneable{
         }
 
         if(entity instanceof Unit unit){
-            Tmp.v3.set(unit).sub(b.x, b.y).nor().scl(knockback * 80f);
-            if(impact) Tmp.v3.setAngle(b.rotation());
+            Tmp.v3.set(unit).sub(b).nor().scl(knockback * 80f);
+            if(impact) Tmp.v3.setAngle(b.rotation() + (knockback < 0 ? 180f : 0f));
             unit.impulse(Tmp.v3);
             unit.apply(status, statusDuration);
         }
@@ -295,7 +297,7 @@ public class BulletType extends Content implements Cloneable{
         }
     }
 
-    /** Called when the bullet reaches the end of its lifetime of is destroyed by something external. */
+    /** Called when the bullet reaches the end of its lifetime or is destroyed by something external. */
     public void despawned(Bullet b){
         if(despawnHit){
             hit(b);
@@ -341,15 +343,6 @@ public class BulletType extends Content implements Cloneable{
         if(instantDisappear){
             b.time = lifetime;
         }
-
-        if(fragBullet != null || splashDamageRadius > 0 || lightning > 0){
-            despawnHit = true;
-        }
-
-        if(lightRadius == -1){
-            lightRadius = Math.max(18, hitSize * 5f);
-        }
-        drawSize = Math.max(drawSize, trailLength * speed * 2f);
     }
 
     public void update(Bullet b){
@@ -369,7 +362,7 @@ public class BulletType extends Content implements Cloneable{
                     e -> e.checkTarget(collidesAir, collidesGround) && e.team != b.team,
                     t -> collidesGround && (t.team != b.team || t.damaged()));
             }else{
-                target = Units.closestTarget(b.team, b.x, b.y, homingRange, e -> e.checkTarget(collidesAir, collidesGround), t -> collidesGround);
+                target = Units.closestTarget(b.team, b.x, b.y, homingRange, e -> e.checkTarget(collidesAir, collidesGround) && !b.hasCollided(e.id), t -> collidesGround && !b.hasCollided(t.id));
             }
 
             if(target != null){
@@ -401,9 +394,24 @@ public class BulletType extends Content implements Cloneable{
             //pierceBuilding is not enabled by default, because a bullet may want to *not* pierce buildings
         }
 
+        if(lightning > 0){
+            if(status == StatusEffects.none){
+                status = StatusEffects.shocked;
+            }
+        }
+
         if(lightningType == null){
             lightningType = !collidesAir ? Bullets.damageLightningGround : Bullets.damageLightning;
         }
+
+        if(fragBullet != null || splashDamageRadius > 0 || lightning > 0){
+            despawnHit = true;
+        }
+
+        if(lightRadius == -1){
+            lightRadius = Math.max(18, hitSize * 5f);
+        }
+        drawSize = Math.max(drawSize, trailLength * speed * 2f);
     }
 
     @Override
@@ -445,7 +453,7 @@ public class BulletType extends Content implements Cloneable{
         bullet.owner = owner;
         bullet.team = team;
         bullet.time = 0f;
-        bullet.vel.trns(angle, speed * velocityScl);
+        bullet.initVel(angle, speed * velocityScl);
         if(backMove){
             bullet.set(x - bullet.vel.x * Time.delta, y - bullet.vel.y * Time.delta);
         }else{
@@ -462,7 +470,7 @@ public class BulletType extends Content implements Cloneable{
         }
         bullet.add();
 
-        if(keepVelocity && owner instanceof Velc v) bullet.vel.add(v.vel().x, v.vel().y);
+        if(keepVelocity && owner instanceof Velc v) bullet.vel.add(v.vel());
         return bullet;
     }
 

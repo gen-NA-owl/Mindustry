@@ -7,9 +7,7 @@ buildscript{
     }
 
     dependencies{
-        //IMPORTANT NOTICE: any version of the plugin after 3.4.1 will break builds
-        //it appears abstract methods don't get desugared properly (if at all)
-        classpath 'com.android.tools.build:gradle:3.4.1'
+        classpath 'com.android.tools.build:gradle:7.0.1'
     }
 }
 
@@ -20,15 +18,14 @@ configurations{ natives }
 repositories{
     mavenCentral()
     maven{ url "https://maven.google.com" }
-    jcenter() //remove later once google/JetBrains fixes the dependency
 }
 
 task deploy(type: Copy){
     dependsOn "assembleRelease"
 
-    from "build/outputs/apk/release/android-release.apk"
+    from "build/outputs/apk/standard/release/android-standard-release.apk"
     into "../deploy/"
-    rename("android-release.apk", "${generateDeployName('android')}.apk")
+    rename("android-standard-release.apk", "${generateDeployName('android')}.apk")
 }
 
 android{
@@ -102,6 +99,9 @@ android{
         all{
             minifyEnabled = true
             shrinkResources = true
+            //this is the ONLY WAY I could find to force r8 to keep its filthy hands off of my default interfaces.
+            //may have undesirable side effects
+            debuggable = true
             proguardFiles("proguard-rules.pro")
         }
     }

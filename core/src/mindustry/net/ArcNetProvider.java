@@ -162,7 +162,9 @@ public class ArcNetProvider implements NetProvider{
                 client.connect(5000, ip, port, port);
                 success.run();
             }catch(Exception e){
-                net.handleException(e);
+                if(netClient.isConnecting()){
+                    net.handleException(e);
+                }
             }
         });
     }
@@ -188,24 +190,22 @@ public class ArcNetProvider implements NetProvider{
 
     @Override
     public void pingHost(String address, int port, Cons<Host> valid, Cons<Exception> invalid){
-        executor.submit(() -> {
-            try{
-                DatagramSocket socket = new DatagramSocket();
-                long time = Time.millis();
-                socket.send(new DatagramPacket(new byte[]{-2, 1}, 2, InetAddress.getByName(address), port));
-                socket.setSoTimeout(2000);
+        try{
+            DatagramSocket socket = new DatagramSocket();
+            long time = Time.millis();
+            socket.send(new DatagramPacket(new byte[]{-2, 1}, 2, InetAddress.getByName(address), port));
+            socket.setSoTimeout(2000);
 
-                DatagramPacket packet = packetSupplier.get();
-                socket.receive(packet);
+            DatagramPacket packet = packetSupplier.get();
+            socket.receive(packet);
 
-                ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
-                Host host = NetworkIO.readServerData((int)Time.timeSinceMillis(time), packet.getAddress().getHostAddress(), buffer);
+            ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
+            Host host = NetworkIO.readServerData((int)Time.timeSinceMillis(time), packet.getAddress().getHostAddress(), buffer);
 
-                Core.app.post(() -> valid.get(host));
-            }catch(Exception e){
-                Core.app.post(() -> invalid.get(e));
-            }
-        });
+            Core.app.post(() -> valid.get(host));
+        }catch(Exception e){
+            Core.app.post(() -> invalid.get(e));
+        }
     }
 
     @Override
@@ -344,24 +344,9 @@ public class ArcNetProvider implements NetProvider{
         //for debugging total read/write speeds
         private static final boolean debug = false;
 
-        ThreadLocal<ByteBuffer> decompressBuffer = new ThreadLocal<>(){
-            @Override
-            protected ByteBuffer initialValue(){
-                return ByteBuffer.allocate(32768);
-            }
-        };
-        ThreadLocal<Reads> reads = new ThreadLocal<>(){
-            @Override
-            protected Reads initialValue(){
-                return new Reads(new ByteBufferInput(decompressBuffer.get()));
-            }
-        };
-        ThreadLocal<Writes> writes = new ThreadLocal<>(){
-            @Override
-            protected Writes initialValue(){
-                return new Writes(new ByteBufferOutput(decompressBuffer.get()));
-            }
-        };
+        ThreadLocal<ByteBuffer> decompressBuffer = Threads.local(() -> ByteBuffer.allocate(32768));
+        ThreadLocal<Reads> reads = Threads.local(() -> new Reads(new ByteBufferInput(decompressBuffer.get())));
+        ThreadLocal<Writes> writes = Threads.local(() -> new Writes(new ByteBufferOutput(decompressBuffer.get())));
 
         //for debugging network write counts
         static WindowedMean upload = new WindowedMean(5), download = new WindowedMean(5);
@@ -385,7 +370,6 @@ public class ArcNetProvider implements NetProvider{
                 return readFramework(byteBuffer);
             }else{
                 //read length int, followed by compressed lz4 data
-                //TODO not thread safe!!!
                 Packet packet = Net.newPacket(id);
                 var buffer = decompressBuffer.get();
                 int length = byteBuffer.getShort() & 0xffff;
@@ -396,7 +380,7 @@ public class ArcNetProvider implements NetProvider{
                     buffer.position(0).limit(length);
                     buffer.put(byteBuffer.array(), byteBuffer.position(), length);
                     buffer.position(0);
-                    packet.read(reads.get());
+                    packet.read(reads.get(), length);
                     //move read packets forward
                     byteBuffer.position(byteBuffer.position() + buffer.position());
                 }else{
@@ -405,7 +389,7 @@ public class ArcNetProvider implements NetProvider{
 
                     buffer.position(0);
                     buffer.limit(length);
-                    packet.read(reads.get());
+                    packet.read(reads.get(), length);
                     //move buffer forward based on bytes read by decompressor
                     byteBuffer.position(byteBuffer.position() + read);
                 }

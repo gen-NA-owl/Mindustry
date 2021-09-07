@@ -7,6 +7,8 @@ import arc.graphics.*;
 import arc.graphics.g2d.*;
 import arc.math.*;
 import arc.math.geom.*;
+import arc.scene.ui.layout.*;
+import arc.struct.*;
 import arc.util.*;
 import mindustry.audio.*;
 import mindustry.content.*;
@@ -15,6 +17,7 @@ import mindustry.entities.bullet.*;
 import mindustry.entities.units.*;
 import mindustry.gen.*;
 import mindustry.graphics.*;
+import mindustry.world.meta.*;
 
 import static mindustry.Vars.*;
 
@@ -117,6 +120,17 @@ public class Weapon implements Cloneable{
 
     public Weapon(){
         this("");
+    }
+
+    public void addStats(UnitType u, Table t){
+        if(inaccuracy > 0){
+            t.row();
+            t.add("[lightgray]" + Stat.inaccuracy.localized() + ": [white]" + (int)inaccuracy + " " + StatUnit.degrees.localized());
+        }
+        t.row();
+        t.add("[lightgray]" + Stat.reload.localized() + ": " + (mirror ? "2x " : "") + "[white]" + Strings.autoFixed(60f / reload * shots, 2) + " " + StatUnit.perSecond.localized());
+
+        StatValues.ammo(ObjectMap.of(u, bullet)).display(t);
     }
 
     public float dps(){
@@ -235,7 +249,7 @@ public class Weapon implements Cloneable{
                 unit.vel.add(Tmp.v1.trns(unit.rotation + 180f, mount.bullet.type.recoil));
                 if(shootSound != Sounds.none && !headless){
                     if(mount.sound == null) mount.sound = new SoundLoop(shootSound, 1f);
-                    mount.sound.update(x, y, true);
+                    mount.sound.update(bulletX, bulletY, true);
                 }
             }
         }else{
@@ -271,8 +285,7 @@ public class Weapon implements Cloneable{
         can && //must be able to shoot
         (!useAmmo || unit.ammo > 0 || !state.rules.unitAmmo || unit.team.rules().infiniteAmmo) && //check ammo
         (!alternate || mount.side == flipSprite) &&
-        //TODO checking for velocity this way isn't entirely correct
-        (unit.vel.len() >= mount.weapon.minShootVelocity || (net.active() && !unit.isLocal())) && //check velocity requirements
+        unit.vel.len() >= mount.weapon.minShootVelocity && //check velocity requirements
         mount.reload <= 0.0001f && //reload has to be 0
         Angles.within(rotate ? mount.rotation : unit.rotation, mount.targetRotation, mount.weapon.shootCone) //has to be within the cone
         ){
@@ -310,6 +323,9 @@ public class Weapon implements Cloneable{
                 Time.run(sequenceNum * shotDelay + firstShotDelay, () -> {
                     if(!unit.isAdded()) return;
                     mount.bullet = bullet(unit, shootX + unit.x - baseX, shootY + unit.y - baseY, f + Mathf.range(inaccuracy), lifeScl);
+                    if(!continuous){
+                        shootSound.at(shootX, shootY, Mathf.random(soundPitchMin, soundPitchMax));
+                    }
                 });
                 sequenceNum++;
             });

@@ -88,7 +88,7 @@ public class MobileInput extends InputHandler implements GestureListener{
         }else{
             Building tile = world.buildWorld(x, y);
 
-            if((tile != null && player.team().isEnemy(tile.team) && tile.team != Team.derelict) || (tile != null && player.unit().type.canHeal && tile.team == player.team() && tile.damaged())){
+            if((tile != null && player.team().isEnemy(tile.team) && (tile.team != Team.derelict || state.rules.coreCapture)) || (tile != null && player.unit().type.canHeal && tile.team == player.team() && tile.damaged())){
                 player.unit().mineTile = null;
                 target = tile;
             }
@@ -270,6 +270,7 @@ public class MobileInput extends InputHandler implements GestureListener{
                 b.button(Icon.save, style, this::showSchematicSave).disabled(f -> lastSchematic == null || lastSchematic.file != null);
                 b.button(Icon.cancel, style, () -> {
                     selectRequests.clear();
+                    lastSchematic = null;
                 });
                 b.row();
                 b.button(Icon.flipX, style, () -> flipRequests(selectRequests, true));
@@ -614,8 +615,10 @@ public class MobileInput extends InputHandler implements GestureListener{
                     //control a unit/block detected on first tap of double-tap
                     if(unitTapped != null){
                         Call.unitControl(player, unitTapped);
+                        recentRespawnTimer = 1f;
                     }else if(buildingTapped != null){
                         Call.buildingControlSelect(player, buildingTapped);
+                        recentRespawnTimer = 1f;
                     }else if(!tryBeginMine(cursor)){
                         tileTapped(linked.build);
                     }
@@ -678,7 +681,7 @@ public class MobileInput extends InputHandler implements GestureListener{
             }
         }
 
-        if(!player.dead() && !state.isPaused()){
+        if(!player.dead() && !state.isPaused() && !renderer.isCutscene()){
             updateMovement(player.unit());
         }
 
@@ -819,7 +822,7 @@ public class MobileInput extends InputHandler implements GestureListener{
                 shiftDeltaX %= tilesize;
                 shiftDeltaY %= tilesize;
             }
-        }else if(!renderer.isLanding()){
+        }else{
             //pan player
             Core.camera.position.x -= deltaX;
             Core.camera.position.y -= deltaY;
@@ -856,8 +859,7 @@ public class MobileInput extends InputHandler implements GestureListener{
 
         boolean omni = unit.type.omniMovement;
         boolean allowHealing = type.canHeal;
-        boolean validHealTarget = allowHealing && target instanceof Building && ((Building)target).isValid() && target.team() == unit.team &&
-            ((Building)target).damaged() && target.within(unit, type.range);
+        boolean validHealTarget = allowHealing && target instanceof Building b && b.isValid() && target.team() == unit.team && b.damaged() && target.within(unit, type.range);
         boolean boosted = (unit instanceof Mechc && unit.isFlying());
 
         //reset target if:
@@ -870,7 +872,7 @@ public class MobileInput extends InputHandler implements GestureListener{
         targetPos.set(Core.camera.position);
         float attractDst = 15f;
 
-        float speed = unit.realSpeed();
+        float speed = unit.speed();
         float range = unit.hasWeapons() ? unit.range() : 0f;
         float bulletSpeed = unit.hasWeapons() ? type.weapons.first().bullet.speed : 0f;
         float mouseAngle = unit.angleTo(unit.aimX(), unit.aimY());
@@ -912,24 +914,12 @@ public class MobileInput extends InputHandler implements GestureListener{
             unit.vel.approachDelta(Vec2.ZERO, unit.speed() * type.accel / 2f);
         }
 
-        float expansion = 3f;
-
         unit.hitbox(rect);
-        rect.x -= expansion;
-        rect.y -= expansion;
-        rect.width += expansion * 2f;
-        rect.height += expansion * 2f;
+        rect.grow(6f);
 
         player.boosting = collisions.overlapsTile(rect) || !unit.within(targetPos, 85f);
 
-        if(omni){
-            unit.moveAt(movement);
-        }else{
-            unit.moveAt(Tmp.v2.trns(unit.rotation, movement.len()));
-            if(!movement.isZero()){
-                unit.vel.rotateTo(movement.angle(), unit.type.rotateSpeed * Math.max(Time.delta, 1));
-            }
-        }
+        unit.movePref(movement);
 
         //update shooting if not building + not mining
         if(!player.unit().activelyBuilding() && player.unit().mineTile == null){
@@ -941,7 +931,7 @@ public class MobileInput extends InputHandler implements GestureListener{
             }else if(target == null){
                 player.shooting = false;
                 if(Core.settings.getBool("autotarget") && !(player.unit() instanceof BlockUnitUnit u && u.tile() instanceof ControlBlock c && !c.shouldAutoTarget())){
-                    target = Units.closestTarget(unit.team, unit.x, unit.y, range, u -> u.team != Team.derelict, u -> u.team != Team.derelict);
+                    target = Units.closestTarget(unit.team, unit.x, unit.y, range, u -> u.checkTarget(type.targetAir, type.targetGround), u -> type.targetGround);
 
                     if(allowHealing && target == null){
                         target = Geometry.findClosest(unit.x, unit.y, indexer.getDamaged(Team.sharded));
