@@ -95,7 +95,7 @@ public class PayloadConveyor extends Block{
         public void onProximityUpdate(){
             super.onProximityUpdate();
 
-            Building accept = nearby(Geometry.d4(rotation).x * size, Geometry.d4(rotation).y * size);
+            Building accept = nearby(Geometry.d4(rotation).x * (size/2+1), Geometry.d4(rotation).y * (size/2+1));
             //next block must be aligned and of the same size
             if(accept != null && (
                 //same size
@@ -125,6 +125,10 @@ public class PayloadConveyor extends Block{
         @Override
         public void updateTile(){
             if(!enabled) return;
+
+            if(item != null){
+                item.update(false);
+            }
 
             lastInterp = curInterp;
             curInterp = fract();
@@ -229,6 +233,11 @@ public class PayloadConveyor extends Block{
             if(item != null){
                 item.draw();
             }
+        }
+
+        @Override
+        public void payloadDraw(){
+            Draw.rect(block.fullIcon,x, y);
         }
 
         public float time(){

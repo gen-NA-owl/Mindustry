@@ -143,6 +143,7 @@ public class PayloadMassDriver extends PayloadBlock{
 
         @Override
         public void updateTile(){
+            super.updateTile();
             Building link = world.build(this.link);
             boolean hasLink = linkValid();
 
@@ -431,6 +432,7 @@ public class PayloadMassDriver extends PayloadBlock{
         @Override
         public boolean onConfigureTileTapped(Building other){
             if(this == other){
+                if(link == -1) deselect();
                 configure(-1);
                 return false;
             }
